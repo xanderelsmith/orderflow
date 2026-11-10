@@ -14,6 +14,8 @@ import 'dart:async' as _ida;
 import 'package:http/http.dart' as _i85jenna;
 import 'package:orderflow_client/src/protocol/greetings/greeting.dart'
     as _iwovvxx7;
+import 'package:orderflow_client/src/protocol/task.dart' as _i7gn33js;
+import 'package:orderflow_client/src/protocol/user.dart' as _ikcn8d35;
 import 'package:serverpod_auth_core_client/serverpod_auth_core_client.dart'
     as _iacc;
 import 'package:serverpod_auth_idp_client/serverpod_auth_idp_client.dart'
@@ -246,6 +248,52 @@ class EndpointJwtRefresh extends _iacc.EndpointRefreshJwtTokens {
       );
 }
 
+/// Pattern 1 (Simple MVC): Endpoints talk directly to the database via ORM.
+/// {@category Endpoint}
+class EndpointTask extends _isc.EndpointRef {
+  EndpointTask(_isc.EndpointCaller caller) : super(caller);
+
+  @override
+  String get name => 'task';
+
+  _ida.Future<_i7gn33js.Task> createTask(_i7gn33js.Task task) =>
+      caller.callServerEndpoint<_i7gn33js.Task>(
+        'task',
+        'createTask',
+        {'task': task},
+      );
+
+  _ida.Future<List<_i7gn33js.Task>> getTasks() =>
+      caller.callServerEndpoint<List<_i7gn33js.Task>>(
+        'task',
+        'getTasks',
+        {},
+      );
+}
+
+/// Pattern 1 (Simple MVC): Direct ORM calls inside the endpoint.
+/// {@category Endpoint}
+class EndpointUser extends _isc.EndpointRef {
+  EndpointUser(_isc.EndpointCaller caller) : super(caller);
+
+  @override
+  String get name => 'user';
+
+  _ida.Future<_ikcn8d35.User> createUser(_ikcn8d35.User user) =>
+      caller.callServerEndpoint<_ikcn8d35.User>(
+        'user',
+        'createUser',
+        {'user': user},
+      );
+
+  _ida.Future<List<_ikcn8d35.User>> getUsers() =>
+      caller.callServerEndpoint<List<_ikcn8d35.User>>(
+        'user',
+        'getUsers',
+        {},
+      );
+}
+
 /// This is an example endpoint that returns a greeting message through
 /// its [hello] method.
 /// {@category Endpoint}
@@ -304,6 +352,8 @@ class Client extends _isc.ServerpodClientShared {
        ) {
     emailIdp = EndpointEmailIdp(this);
     jwtRefresh = EndpointJwtRefresh(this);
+    task = EndpointTask(this);
+    user = EndpointUser(this);
     greeting = EndpointGreeting(this);
     modules = Modules(this);
   }
@@ -311,6 +361,10 @@ class Client extends _isc.ServerpodClientShared {
   late final EndpointEmailIdp emailIdp;
 
   late final EndpointJwtRefresh jwtRefresh;
+
+  late final EndpointTask task;
+
+  late final EndpointUser user;
 
   late final EndpointGreeting greeting;
 
@@ -320,6 +374,8 @@ class Client extends _isc.ServerpodClientShared {
   Map<String, _isc.EndpointRef> get endpointRefLookup => {
     'emailIdp': emailIdp,
     'jwtRefresh': jwtRefresh,
+    'task': task,
+    'user': user,
     'greeting': greeting,
   };
 

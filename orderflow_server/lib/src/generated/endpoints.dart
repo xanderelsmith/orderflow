@@ -10,6 +10,8 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
+import 'package:orderflow_server/src/generated/task.dart' as _i97zzhd3;
+import 'package:orderflow_server/src/generated/user.dart' as _iae6yn9p;
 import 'package:serverpod/serverpod.dart' as _is;
 import 'package:serverpod_auth_core_server/serverpod_auth_core_server.dart'
     as _iacs;
@@ -17,6 +19,8 @@ import 'package:serverpod_auth_idp_server/serverpod_auth_idp_server.dart'
     as _iais;
 import '../auth/email_idp_endpoint.dart' as _iuc1hd5t;
 import '../auth/jwt_refresh_endpoint.dart' as _inwq3ztq;
+import '../endpoints/task_endpoint.dart' as _idmllfay;
+import '../endpoints/user_endpoint.dart' as _iymy5306;
 import '../greetings/greeting_endpoint.dart' as _il624ik7;
 
 class Endpoints extends _is.EndpointDispatch {
@@ -33,6 +37,18 @@ class Endpoints extends _is.EndpointDispatch {
         ..initialize(
           server,
           'jwtRefresh',
+          null,
+        ),
+      'task': _idmllfay.TaskEndpoint()
+        ..initialize(
+          server,
+          'task',
+          null,
+        ),
+      'user': _iymy5306.UserEndpoint()
+        ..initialize(
+          server,
+          'user',
           null,
         ),
       'greeting': _il624ik7.GreetingEndpoint()
@@ -245,6 +261,78 @@ class Endpoints extends _is.EndpointDispatch {
                         session,
                         refreshToken: params['refreshToken'],
                       ),
+        ),
+      },
+    );
+    connectors['task'] = _is.EndpointConnector(
+      name: 'task',
+      endpoint: endpoints['task']!,
+      methodConnectors: {
+        'createTask': _is.MethodConnector(
+          name: 'createTask',
+          params: {
+            'task': _is.ParameterDescription(
+              name: 'task',
+              type: _is.getType<_i97zzhd3.Task>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['task'] as _idmllfay.TaskEndpoint).createTask(
+                    session,
+                    params['task'],
+                  ),
+        ),
+        'getTasks': _is.MethodConnector(
+          name: 'getTasks',
+          params: {},
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['task'] as _idmllfay.TaskEndpoint).getTasks(
+                session,
+              ),
+        ),
+      },
+    );
+    connectors['user'] = _is.EndpointConnector(
+      name: 'user',
+      endpoint: endpoints['user']!,
+      methodConnectors: {
+        'createUser': _is.MethodConnector(
+          name: 'createUser',
+          params: {
+            'user': _is.ParameterDescription(
+              name: 'user',
+              type: _is.getType<_iae6yn9p.User>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['user'] as _iymy5306.UserEndpoint).createUser(
+                    session,
+                    params['user'],
+                  ),
+        ),
+        'getUsers': _is.MethodConnector(
+          name: 'getUsers',
+          params: {},
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['user'] as _iymy5306.UserEndpoint).getUsers(
+                session,
+              ),
         ),
       },
     );

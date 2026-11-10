@@ -9,5 +9,11 @@ emailIdp:
   - hasAccount:
 jwtRefresh:
   - refreshAccessToken:
+task:
+  - createTask:
+  - getTasks:
+user:
+  - createUser:
+  - getUsers:
 greeting:
   - hello:
