@@ -1,4 +1,0 @@
-class: OrderResponse
-fields:
-  orderId: int
-  success: bool

@@ -9,10 +9,13 @@ emailIdp:
   - hasAccount:
 jwtRefresh:
   - refreshAccessToken:
-order:
-  - createOrder:
-user:
-  - createUser:
-  - getUsers:
+authFeature:
+  - register:
+  - lookupByEmail:
+orderFeature:
+  - placeOrder:
+  - listMyOrders:
+paymentFeature:
+  - chargeOrder:
 greeting:
   - hello:

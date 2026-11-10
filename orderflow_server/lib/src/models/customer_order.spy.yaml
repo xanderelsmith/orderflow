@@ -1,6 +1,0 @@
-class: CustomerOrder
-table: customer_orders
-fields:
-  userId: String
-  total: double
-  createdAt: DateTime

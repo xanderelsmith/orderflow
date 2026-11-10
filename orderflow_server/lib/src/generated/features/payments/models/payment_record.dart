@@ -12,65 +12,72 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod/serverpod.dart' as _is;
 
-abstract class CustomerOrder
+abstract class PaymentRecord
     implements _is.TableRow<int?>, _is.ProtocolSerialization {
-  CustomerOrder._({
+  PaymentRecord._({
     this.id,
-    required this.userId,
-    required this.total,
+    required this.orderId,
+    required this.amount,
+    required this.status,
     required this.createdAt,
   });
 
-  factory CustomerOrder({
+  factory PaymentRecord({
     int? id,
-    required String userId,
-    required double total,
+    required int orderId,
+    required double amount,
+    required String status,
     required DateTime createdAt,
-  }) = _CustomerOrderImpl;
+  }) = _PaymentRecordImpl;
 
-  factory CustomerOrder.fromJson(Map<String, dynamic> jsonSerialization) {
-    return CustomerOrder(
+  factory PaymentRecord.fromJson(Map<String, dynamic> jsonSerialization) {
+    return PaymentRecord(
       id: jsonSerialization['id'] as int?,
-      userId: jsonSerialization['userId'] as String,
-      total: (jsonSerialization['total'] as num).toDouble(),
+      orderId: jsonSerialization['orderId'] as int,
+      amount: (jsonSerialization['amount'] as num).toDouble(),
+      status: jsonSerialization['status'] as String,
       createdAt: _is.DateTimeJsonExtension.fromJson(
         jsonSerialization['createdAt'],
       ),
     );
   }
 
-  static final t = CustomerOrderTable();
+  static final t = PaymentRecordTable();
 
-  static const db = CustomerOrderRepository._();
+  static const db = PaymentRecordRepository._();
 
   @override
   int? id;
 
-  String userId;
+  int orderId;
 
-  double total;
+  double amount;
+
+  String status;
 
   DateTime createdAt;
 
   @override
   _is.Table<int?> get table => t;
 
-  /// Returns a shallow copy of this [CustomerOrder]
+  /// Returns a shallow copy of this [PaymentRecord]
   /// with some or all fields replaced by the given arguments.
   @_is.useResult
-  CustomerOrder copyWith({
+  PaymentRecord copyWith({
     int? id,
-    String? userId,
-    double? total,
+    int? orderId,
+    double? amount,
+    String? status,
     DateTime? createdAt,
   });
   @override
   Map<String, dynamic> toJson() {
     return {
-      '__className__': 'CustomerOrder',
+      '__className__': 'PaymentRecord',
       if (id != null) 'id': id,
-      'userId': userId,
-      'total': total,
+      'orderId': orderId,
+      'amount': amount,
+      'status': status,
       'createdAt': createdAt.toJson(),
     };
   }
@@ -78,32 +85,33 @@ abstract class CustomerOrder
   @override
   Map<String, dynamic> toJsonForProtocol() {
     return {
-      '__className__': 'CustomerOrder',
+      '__className__': 'PaymentRecord',
       if (id != null) 'id': id,
-      'userId': userId,
-      'total': total,
+      'orderId': orderId,
+      'amount': amount,
+      'status': status,
       'createdAt': createdAt.toJson(),
     };
   }
 
-  static CustomerOrderInclude include() {
-    return CustomerOrderInclude._();
+  static PaymentRecordInclude include() {
+    return PaymentRecordInclude._();
   }
 
-  static CustomerOrderIncludeList includeList({
-    _is.WhereExpressionBuilder<CustomerOrderTable>? where,
+  static PaymentRecordIncludeList includeList({
+    _is.WhereExpressionBuilder<PaymentRecordTable>? where,
     int? limit,
     int? offset,
-    _is.OrderByBuilder<CustomerOrderTable>? orderBy,
-    _is.OrderByListBuilder<CustomerOrderTable>? orderByList,
-    CustomerOrderInclude? include,
+    _is.OrderByBuilder<PaymentRecordTable>? orderBy,
+    _is.OrderByListBuilder<PaymentRecordTable>? orderByList,
+    PaymentRecordInclude? include,
   }) {
-    return CustomerOrderIncludeList._(
+    return PaymentRecordIncludeList._(
       where: where,
       limit: limit,
       offset: offset,
-      orderBy: orderBy?.call(CustomerOrder.t),
-      orderByList: orderByList?.call(CustomerOrder.t),
+      orderBy: orderBy?.call(PaymentRecord.t),
+      orderByList: orderByList?.call(PaymentRecord.t),
       include: include,
     );
   }
@@ -116,48 +124,57 @@ abstract class CustomerOrder
 
 class _Undefined {}
 
-class _CustomerOrderImpl extends CustomerOrder {
-  _CustomerOrderImpl({
+class _PaymentRecordImpl extends PaymentRecord {
+  _PaymentRecordImpl({
     int? id,
-    required String userId,
-    required double total,
+    required int orderId,
+    required double amount,
+    required String status,
     required DateTime createdAt,
   }) : super._(
          id: id,
-         userId: userId,
-         total: total,
+         orderId: orderId,
+         amount: amount,
+         status: status,
          createdAt: createdAt,
        );
 
-  /// Returns a shallow copy of this [CustomerOrder]
+  /// Returns a shallow copy of this [PaymentRecord]
   /// with some or all fields replaced by the given arguments.
   @_is.useResult
   @override
-  CustomerOrder copyWith({
+  PaymentRecord copyWith({
     Object? id = _Undefined,
-    String? userId,
-    double? total,
+    int? orderId,
+    double? amount,
+    String? status,
     DateTime? createdAt,
   }) {
-    return CustomerOrder(
+    return PaymentRecord(
       id: id is int? ? id : this.id,
-      userId: userId ?? this.userId,
-      total: total ?? this.total,
+      orderId: orderId ?? this.orderId,
+      amount: amount ?? this.amount,
+      status: status ?? this.status,
       createdAt: createdAt ?? this.createdAt,
     );
   }
 }
 
-class CustomerOrderUpdateTable extends _is.UpdateTable<CustomerOrderTable> {
-  CustomerOrderUpdateTable(super.table);
+class PaymentRecordUpdateTable extends _is.UpdateTable<PaymentRecordTable> {
+  PaymentRecordUpdateTable(super.table);
 
-  _is.ColumnValue<String, String> userId(String value) => _is.ColumnValue(
-    table.userId,
+  _is.ColumnValue<int, int> orderId(int value) => _is.ColumnValue(
+    table.orderId,
     value,
   );
 
-  _is.ColumnValue<double, double> total(double value) => _is.ColumnValue(
-    table.total,
+  _is.ColumnValue<double, double> amount(double value) => _is.ColumnValue(
+    table.amount,
+    value,
+  );
+
+  _is.ColumnValue<String, String> status(String value) => _is.ColumnValue(
+    table.status,
     value,
   );
 
@@ -168,16 +185,20 @@ class CustomerOrderUpdateTable extends _is.UpdateTable<CustomerOrderTable> {
       );
 }
 
-class CustomerOrderTable extends _is.Table<int?> {
-  CustomerOrderTable({super.tableRelation})
-    : super(tableName: 'customer_orders') {
-    updateTable = CustomerOrderUpdateTable(this);
-    userId = _is.ColumnString(
-      'userId',
+class PaymentRecordTable extends _is.Table<int?> {
+  PaymentRecordTable({super.tableRelation})
+    : super(tableName: 'payment_records') {
+    updateTable = PaymentRecordUpdateTable(this);
+    orderId = _is.ColumnInt(
+      'orderId',
       this,
     );
-    total = _is.ColumnDouble(
-      'total',
+    amount = _is.ColumnDouble(
+      'amount',
+      this,
+    );
+    status = _is.ColumnString(
+      'status',
       this,
     );
     createdAt = _is.ColumnDateTime(
@@ -186,56 +207,59 @@ class CustomerOrderTable extends _is.Table<int?> {
     );
   }
 
-  late final CustomerOrderUpdateTable updateTable;
+  late final PaymentRecordUpdateTable updateTable;
 
-  late final _is.ColumnString userId;
+  late final _is.ColumnInt orderId;
 
-  late final _is.ColumnDouble total;
+  late final _is.ColumnDouble amount;
+
+  late final _is.ColumnString status;
 
   late final _is.ColumnDateTime createdAt;
 
   @override
   List<_is.Column> get columns => [
     id,
-    userId,
-    total,
+    orderId,
+    amount,
+    status,
     createdAt,
   ];
 }
 
-class CustomerOrderInclude extends _is.IncludeObject {
-  CustomerOrderInclude._();
+class PaymentRecordInclude extends _is.IncludeObject {
+  PaymentRecordInclude._();
 
   @override
   Map<String, _is.Include?> get includes => {};
 
   @override
-  _is.Table<int?> get table => CustomerOrder.t;
+  _is.Table<int?> get table => PaymentRecord.t;
 }
 
-class CustomerOrderIncludeList extends _is.IncludeList {
-  CustomerOrderIncludeList._({
-    _is.WhereExpressionBuilder<CustomerOrderTable>? where,
+class PaymentRecordIncludeList extends _is.IncludeList {
+  PaymentRecordIncludeList._({
+    _is.WhereExpressionBuilder<PaymentRecordTable>? where,
     super.limit,
     super.offset,
     super.orderBy,
     super.orderByList,
     super.include,
   }) {
-    super.where = where?.call(CustomerOrder.t);
+    super.where = where?.call(PaymentRecord.t);
   }
 
   @override
   Map<String, _is.Include?> get includes => include?.includes ?? {};
 
   @override
-  _is.Table<int?> get table => CustomerOrder.t;
+  _is.Table<int?> get table => PaymentRecord.t;
 }
 
-class CustomerOrderRepository {
-  const CustomerOrderRepository._();
+class PaymentRecordRepository {
+  const PaymentRecordRepository._();
 
-  /// Returns a list of [CustomerOrder]s matching the given query parameters.
+  /// Returns a list of [PaymentRecord]s matching the given query parameters.
   ///
   /// Use [where] to specify which items to include in the return value.
   /// If none is specified, all items will be returned.
@@ -257,21 +281,21 @@ class CustomerOrderRepository {
   ///   limit: 100,
   /// );
   /// ```
-  Future<List<CustomerOrder>> find(
+  Future<List<PaymentRecord>> find(
     _is.DatabaseSession session, {
-    _is.WhereExpressionBuilder<CustomerOrderTable>? where,
+    _is.WhereExpressionBuilder<PaymentRecordTable>? where,
     int? limit,
     int? offset,
-    _is.OrderByBuilder<CustomerOrderTable>? orderBy,
-    _is.OrderByListBuilder<CustomerOrderTable>? orderByList,
+    _is.OrderByBuilder<PaymentRecordTable>? orderBy,
+    _is.OrderByListBuilder<PaymentRecordTable>? orderByList,
     _is.Transaction? transaction,
     _is.LockMode? lockMode,
     _is.LockBehavior? lockBehavior,
   }) async {
-    return session.db.find<CustomerOrder>(
-      where: where?.call(CustomerOrder.t),
-      orderBy: orderBy?.call(CustomerOrder.t),
-      orderByList: orderByList?.call(CustomerOrder.t),
+    return session.db.find<PaymentRecord>(
+      where: where?.call(PaymentRecord.t),
+      orderBy: orderBy?.call(PaymentRecord.t),
+      orderByList: orderByList?.call(PaymentRecord.t),
       limit: limit,
       offset: offset,
       transaction: transaction,
@@ -280,7 +304,7 @@ class CustomerOrderRepository {
     );
   }
 
-  /// Returns the first matching [CustomerOrder] matching the given query parameters.
+  /// Returns the first matching [PaymentRecord] matching the given query parameters.
   ///
   /// Use [where] to specify which items to include in the return value.
   /// If none is specified, all items will be returned.
@@ -297,20 +321,20 @@ class CustomerOrderRepository {
   ///   orderBy: (t) => t.age,
   /// );
   /// ```
-  Future<CustomerOrder?> findFirstRow(
+  Future<PaymentRecord?> findFirstRow(
     _is.DatabaseSession session, {
-    _is.WhereExpressionBuilder<CustomerOrderTable>? where,
+    _is.WhereExpressionBuilder<PaymentRecordTable>? where,
     int? offset,
-    _is.OrderByBuilder<CustomerOrderTable>? orderBy,
-    _is.OrderByListBuilder<CustomerOrderTable>? orderByList,
+    _is.OrderByBuilder<PaymentRecordTable>? orderBy,
+    _is.OrderByListBuilder<PaymentRecordTable>? orderByList,
     _is.Transaction? transaction,
     _is.LockMode? lockMode,
     _is.LockBehavior? lockBehavior,
   }) async {
-    return session.db.findFirstRow<CustomerOrder>(
-      where: where?.call(CustomerOrder.t),
-      orderBy: orderBy?.call(CustomerOrder.t),
-      orderByList: orderByList?.call(CustomerOrder.t),
+    return session.db.findFirstRow<PaymentRecord>(
+      where: where?.call(PaymentRecord.t),
+      orderBy: orderBy?.call(PaymentRecord.t),
+      orderByList: orderByList?.call(PaymentRecord.t),
       offset: offset,
       transaction: transaction,
       lockMode: lockMode,
@@ -318,15 +342,15 @@ class CustomerOrderRepository {
     );
   }
 
-  /// Finds a single [CustomerOrder] by its [id] or null if no such row exists.
-  Future<CustomerOrder?> findById(
+  /// Finds a single [PaymentRecord] by its [id] or null if no such row exists.
+  Future<PaymentRecord?> findById(
     _is.DatabaseSession session,
     int id, {
     _is.Transaction? transaction,
     _is.LockMode? lockMode,
     _is.LockBehavior? lockBehavior,
   }) async {
-    return session.db.findById<CustomerOrder>(
+    return session.db.findById<PaymentRecord>(
       id,
       transaction: transaction,
       lockMode: lockMode,
@@ -334,9 +358,9 @@ class CustomerOrderRepository {
     );
   }
 
-  /// Inserts all [CustomerOrder]s in the list and returns the inserted rows.
+  /// Inserts all [PaymentRecord]s in the list and returns the inserted rows.
   ///
-  /// The returned [CustomerOrder]s will have their `id` fields set.
+  /// The returned [PaymentRecord]s will have their `id` fields set.
   ///
   /// This is an atomic operation, meaning that if one of the rows fails to
   /// insert, none of the rows will be inserted.
@@ -348,14 +372,14 @@ class CustomerOrderRepository {
   /// If [noReturn] is set to `true`, the inserted rows are not read back from
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
-  Future<List<CustomerOrder>> insert(
+  Future<List<PaymentRecord>> insert(
     _is.DatabaseSession session,
-    List<CustomerOrder> rows, {
+    List<PaymentRecord> rows, {
     _is.Transaction? transaction,
     bool ignoreConflicts = false,
     bool noReturn = false,
   }) async {
-    return session.db.insert<CustomerOrder>(
+    return session.db.insert<PaymentRecord>(
       rows,
       transaction: transaction,
       ignoreConflicts: ignoreConflicts,
@@ -363,21 +387,21 @@ class CustomerOrderRepository {
     );
   }
 
-  /// Inserts a single [CustomerOrder] and returns the inserted row.
+  /// Inserts a single [PaymentRecord] and returns the inserted row.
   ///
-  /// The returned [CustomerOrder] will have its `id` field set.
-  Future<CustomerOrder> insertRow(
+  /// The returned [PaymentRecord] will have its `id` field set.
+  Future<PaymentRecord> insertRow(
     _is.DatabaseSession session,
-    CustomerOrder row, {
+    PaymentRecord row, {
     _is.Transaction? transaction,
   }) async {
-    return session.db.insertRow<CustomerOrder>(
+    return session.db.insertRow<PaymentRecord>(
       row,
       transaction: transaction,
     );
   }
 
-  /// Upserts all [CustomerOrder]s in the list and returns the resulting rows.
+  /// Upserts all [PaymentRecord]s in the list and returns the resulting rows.
   ///
   /// If a row conflicts on the given [conflictColumns], the existing row is
   /// updated with the new values. Otherwise, a new row is inserted.
@@ -389,7 +413,7 @@ class CustomerOrderRepository {
   /// given expression. Conflicting rows that don't match are skipped and not
   /// returned, so the resulting list may be shorter than [rows].
   ///
-  /// The returned [CustomerOrder]s will have their `id` fields set.
+  /// The returned [PaymentRecord]s will have their `id` fields set.
   ///
   /// This is an atomic operation, meaning that if one of the rows fails,
   /// none of the rows will be affected.
@@ -397,26 +421,26 @@ class CustomerOrderRepository {
   /// If [noReturn] is set to `true`, the resulting rows are not read back from
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
-  Future<List<CustomerOrder>> upsert(
+  Future<List<PaymentRecord>> upsert(
     _is.DatabaseSession session,
-    List<CustomerOrder> rows, {
-    required _is.ColumnSelections<CustomerOrderTable> conflictColumns,
-    _is.ColumnSelections<CustomerOrderTable>? updateColumns,
-    _is.WhereExpressionBuilder<CustomerOrderTable>? updateWhere,
+    List<PaymentRecord> rows, {
+    required _is.ColumnSelections<PaymentRecordTable> conflictColumns,
+    _is.ColumnSelections<PaymentRecordTable>? updateColumns,
+    _is.WhereExpressionBuilder<PaymentRecordTable>? updateWhere,
     _is.Transaction? transaction,
     bool noReturn = false,
   }) async {
-    return session.db.upsert<CustomerOrder>(
+    return session.db.upsert<PaymentRecord>(
       rows,
-      conflictColumns: conflictColumns(CustomerOrder.t),
-      updateColumns: updateColumns?.call(CustomerOrder.t),
-      updateWhere: updateWhere?.call(CustomerOrder.t),
+      conflictColumns: conflictColumns(PaymentRecord.t),
+      updateColumns: updateColumns?.call(PaymentRecord.t),
+      updateWhere: updateWhere?.call(PaymentRecord.t),
       transaction: transaction,
       noReturn: noReturn,
     );
   }
 
-  /// Upserts a single [CustomerOrder] and returns the resulting row.
+  /// Upserts a single [PaymentRecord] and returns the resulting row.
   ///
   /// If the row conflicts on the given [conflictColumns], the existing row is
   /// updated. Otherwise, a new row is inserted.
@@ -428,25 +452,25 @@ class CustomerOrderRepository {
   /// row matches the expression. Returns `null` if no row was affected — for
   /// example when [updateWhere] does not match the conflicting row.
   ///
-  /// The returned [CustomerOrder] will have its `id` field set.
-  Future<CustomerOrder?> upsertRow(
+  /// The returned [PaymentRecord] will have its `id` field set.
+  Future<PaymentRecord?> upsertRow(
     _is.DatabaseSession session,
-    CustomerOrder row, {
-    required _is.ColumnSelections<CustomerOrderTable> conflictColumns,
-    _is.ColumnSelections<CustomerOrderTable>? updateColumns,
-    _is.WhereExpressionBuilder<CustomerOrderTable>? updateWhere,
+    PaymentRecord row, {
+    required _is.ColumnSelections<PaymentRecordTable> conflictColumns,
+    _is.ColumnSelections<PaymentRecordTable>? updateColumns,
+    _is.WhereExpressionBuilder<PaymentRecordTable>? updateWhere,
     _is.Transaction? transaction,
   }) async {
-    return session.db.upsertRow<CustomerOrder>(
+    return session.db.upsertRow<PaymentRecord>(
       row,
-      conflictColumns: conflictColumns(CustomerOrder.t),
-      updateColumns: updateColumns?.call(CustomerOrder.t),
-      updateWhere: updateWhere?.call(CustomerOrder.t),
+      conflictColumns: conflictColumns(PaymentRecord.t),
+      updateColumns: updateColumns?.call(PaymentRecord.t),
+      updateWhere: updateWhere?.call(PaymentRecord.t),
       transaction: transaction,
     );
   }
 
-  /// Updates all [CustomerOrder]s in the list and returns the updated rows. If
+  /// Updates all [PaymentRecord]s in the list and returns the updated rows. If
   /// [columns] is provided, only those columns will be updated. Defaults to
   /// all columns.
   /// This is an atomic operation, meaning that if one of the rows fails to
@@ -455,82 +479,82 @@ class CustomerOrderRepository {
   /// If [noReturn] is set to `true`, the updated rows are not read back from
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
-  Future<List<CustomerOrder>> update(
+  Future<List<PaymentRecord>> update(
     _is.DatabaseSession session,
-    List<CustomerOrder> rows, {
-    _is.ColumnSelections<CustomerOrderTable>? columns,
+    List<PaymentRecord> rows, {
+    _is.ColumnSelections<PaymentRecordTable>? columns,
     _is.Transaction? transaction,
     bool noReturn = false,
   }) async {
-    return session.db.update<CustomerOrder>(
+    return session.db.update<PaymentRecord>(
       rows,
-      columns: columns?.call(CustomerOrder.t),
+      columns: columns?.call(PaymentRecord.t),
       transaction: transaction,
       noReturn: noReturn,
     );
   }
 
-  /// Updates a single [CustomerOrder]. The row needs to have its id set.
+  /// Updates a single [PaymentRecord]. The row needs to have its id set.
   /// Optionally, a list of [columns] can be provided to only update those
   /// columns. Defaults to all columns.
-  Future<CustomerOrder> updateRow(
+  Future<PaymentRecord> updateRow(
     _is.DatabaseSession session,
-    CustomerOrder row, {
-    _is.ColumnSelections<CustomerOrderTable>? columns,
+    PaymentRecord row, {
+    _is.ColumnSelections<PaymentRecordTable>? columns,
     _is.Transaction? transaction,
   }) async {
-    return session.db.updateRow<CustomerOrder>(
+    return session.db.updateRow<PaymentRecord>(
       row,
-      columns: columns?.call(CustomerOrder.t),
+      columns: columns?.call(PaymentRecord.t),
       transaction: transaction,
     );
   }
 
-  /// Updates a single [CustomerOrder] by its [id] with the specified [columnValues].
+  /// Updates a single [PaymentRecord] by its [id] with the specified [columnValues].
   /// Returns the updated row or null if no row with the given id exists.
-  Future<CustomerOrder?> updateById(
+  Future<PaymentRecord?> updateById(
     _is.DatabaseSession session,
     int id, {
-    required _is.ColumnValueListBuilder<CustomerOrderUpdateTable> columnValues,
+    required _is.ColumnValueListBuilder<PaymentRecordUpdateTable> columnValues,
     _is.Transaction? transaction,
   }) async {
-    return session.db.updateById<CustomerOrder>(
+    return session.db.updateById<PaymentRecord>(
       id,
-      columnValues: columnValues(CustomerOrder.t.updateTable),
+      columnValues: columnValues(PaymentRecord.t.updateTable),
       transaction: transaction,
     );
   }
 
-  /// Updates all [CustomerOrder]s matching the [where] expression with the specified [columnValues].
+  /// Updates all [PaymentRecord]s matching the [where] expression with the specified [columnValues].
   /// Returns the list of updated rows.
   ///
   /// If [noReturn] is set to `true`, the updated rows are not read back from
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
-  Future<List<CustomerOrder>> updateWhere(
+  Future<List<PaymentRecord>> updateWhere(
     _is.DatabaseSession session, {
-    required _is.ColumnValueListBuilder<CustomerOrderUpdateTable> columnValues,
-    required _is.WhereExpressionBuilder<CustomerOrderTable> where,
+    required _is.ColumnValueListBuilder<PaymentRecordUpdateTable> columnValues,
+    required _is.WhereExpressionBuilder<PaymentRecordTable> where,
     int? limit,
     int? offset,
-    _is.OrderByBuilder<CustomerOrderTable>? orderBy,
-    _is.OrderByListBuilder<CustomerOrderTable>? orderByList,
+    _is.OrderByBuilder<PaymentRecordTable>? orderBy,
+    _is.OrderByListBuilder<PaymentRecordTable>? orderByList,
     _is.Transaction? transaction,
     bool noReturn = false,
   }) async {
-    return session.db.updateWhere<CustomerOrder>(
-      columnValues: columnValues(CustomerOrder.t.updateTable),
-      where: where(CustomerOrder.t),
+    return session.db.updateWhere<PaymentRecord>(
+      columnValues: columnValues(PaymentRecord.t.updateTable),
+      where: where(PaymentRecord.t),
       limit: limit,
       offset: offset,
-      orderBy: orderBy?.call(CustomerOrder.t),
-      orderByList: orderByList?.call(CustomerOrder.t),
+      orderBy: orderBy?.call(PaymentRecord.t),
+      orderByList: orderByList?.call(PaymentRecord.t),
       transaction: transaction,
       noReturn: noReturn,
     );
   }
 
-  /// Deletes all [CustomerOrder]s in the list and returns the deleted rows.
+  /// Deletes all [PaymentRecord]s in the list and returns the deleted rows.
   ///
   /// To specify the order of the returned rows use [orderBy] or [orderByList]
   /// when sorting by multiple columns.
@@ -541,30 +565,30 @@ class CustomerOrderRepository {
   /// If [noReturn] is set to `true`, the deleted rows are not read back from
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
-  Future<List<CustomerOrder>> delete(
+  Future<List<PaymentRecord>> delete(
     _is.DatabaseSession session,
-    List<CustomerOrder> rows, {
-    _is.OrderByBuilder<CustomerOrderTable>? orderBy,
-    _is.OrderByListBuilder<CustomerOrderTable>? orderByList,
+    List<PaymentRecord> rows, {
+    _is.OrderByBuilder<PaymentRecordTable>? orderBy,
+    _is.OrderByListBuilder<PaymentRecordTable>? orderByList,
     _is.Transaction? transaction,
     bool noReturn = false,
   }) async {
-    return session.db.delete<CustomerOrder>(
+    return session.db.delete<PaymentRecord>(
       rows,
-      orderBy: orderBy?.call(CustomerOrder.t),
-      orderByList: orderByList?.call(CustomerOrder.t),
+      orderBy: orderBy?.call(PaymentRecord.t),
+      orderByList: orderByList?.call(PaymentRecord.t),
       transaction: transaction,
       noReturn: noReturn,
     );
   }
 
-  /// Deletes a single [CustomerOrder].
-  Future<CustomerOrder> deleteRow(
+  /// Deletes a single [PaymentRecord].
+  Future<PaymentRecord> deleteRow(
     _is.DatabaseSession session,
-    CustomerOrder row, {
+    PaymentRecord row, {
     _is.Transaction? transaction,
   }) async {
-    return session.db.deleteRow<CustomerOrder>(
+    return session.db.deleteRow<PaymentRecord>(
       row,
       transaction: transaction,
     );
@@ -578,18 +602,18 @@ class CustomerOrderRepository {
   /// If [noReturn] is set to `true`, the deleted rows are not read back from
   /// the database and an empty list is returned. This avoids the overhead of
   /// transferring and deserializing the rows when the result is not needed.
-  Future<List<CustomerOrder>> deleteWhere(
+  Future<List<PaymentRecord>> deleteWhere(
     _is.DatabaseSession session, {
-    required _is.WhereExpressionBuilder<CustomerOrderTable> where,
-    _is.OrderByBuilder<CustomerOrderTable>? orderBy,
-    _is.OrderByListBuilder<CustomerOrderTable>? orderByList,
+    required _is.WhereExpressionBuilder<PaymentRecordTable> where,
+    _is.OrderByBuilder<PaymentRecordTable>? orderBy,
+    _is.OrderByListBuilder<PaymentRecordTable>? orderByList,
     _is.Transaction? transaction,
     bool noReturn = false,
   }) async {
-    return session.db.deleteWhere<CustomerOrder>(
-      where: where(CustomerOrder.t),
-      orderBy: orderBy?.call(CustomerOrder.t),
-      orderByList: orderByList?.call(CustomerOrder.t),
+    return session.db.deleteWhere<PaymentRecord>(
+      where: where(PaymentRecord.t),
+      orderBy: orderBy?.call(PaymentRecord.t),
+      orderByList: orderByList?.call(PaymentRecord.t),
       transaction: transaction,
       noReturn: noReturn,
     );
@@ -599,27 +623,27 @@ class CustomerOrderRepository {
   /// will return the count of all rows in the table.
   Future<int> count(
     _is.DatabaseSession session, {
-    _is.WhereExpressionBuilder<CustomerOrderTable>? where,
+    _is.WhereExpressionBuilder<PaymentRecordTable>? where,
     int? limit,
     _is.Transaction? transaction,
   }) async {
-    return session.db.count<CustomerOrder>(
-      where: where?.call(CustomerOrder.t),
+    return session.db.count<PaymentRecord>(
+      where: where?.call(PaymentRecord.t),
       limit: limit,
       transaction: transaction,
     );
   }
 
-  /// Acquires row-level locks on [CustomerOrder] rows matching the [where] expression.
+  /// Acquires row-level locks on [PaymentRecord] rows matching the [where] expression.
   Future<void> lockRows(
     _is.DatabaseSession session, {
-    required _is.WhereExpressionBuilder<CustomerOrderTable> where,
+    required _is.WhereExpressionBuilder<PaymentRecordTable> where,
     required _is.LockMode lockMode,
     required _is.Transaction transaction,
     _is.LockBehavior lockBehavior = _is.LockBehavior.wait,
   }) async {
-    return session.db.lockRows<CustomerOrder>(
-      where: where(CustomerOrder.t),
+    return session.db.lockRows<PaymentRecord>(
+      where: where(PaymentRecord.t),
       lockMode: lockMode,
       lockBehavior: lockBehavior,
       transaction: transaction,

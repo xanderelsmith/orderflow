@@ -10,9 +10,6 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:orderflow_server/src/generated/create_order_request.dart'
-    as _itze2x1b;
-import 'package:orderflow_server/src/generated/user.dart' as _iae6yn9p;
 import 'package:serverpod/serverpod.dart' as _is;
 import 'package:serverpod_auth_core_server/serverpod_auth_core_server.dart'
     as _iacs;
@@ -20,8 +17,9 @@ import 'package:serverpod_auth_idp_server/serverpod_auth_idp_server.dart'
     as _iais;
 import '../auth/email_idp_endpoint.dart' as _iuc1hd5t;
 import '../auth/jwt_refresh_endpoint.dart' as _inwq3ztq;
-import '../endpoints/order_endpoint.dart' as _itwfdqvf;
-import '../endpoints/user_endpoint.dart' as _iymy5306;
+import '../features/auth/auth_endpoint.dart' as _iq40hmnx;
+import '../features/orders/order_endpoint.dart' as _i66n1pnl;
+import '../features/payments/payment_endpoint.dart' as _i2g7ii4i;
 import '../greetings/greeting_endpoint.dart' as _il624ik7;
 
 class Endpoints extends _is.EndpointDispatch {
@@ -40,16 +38,22 @@ class Endpoints extends _is.EndpointDispatch {
           'jwtRefresh',
           null,
         ),
-      'order': _itwfdqvf.OrderEndpoint()
+      'authFeature': _iq40hmnx.AuthFeatureEndpoint()
         ..initialize(
           server,
-          'order',
+          'authFeature',
           null,
         ),
-      'user': _iymy5306.UserEndpoint()
+      'orderFeature': _i66n1pnl.OrderFeatureEndpoint()
         ..initialize(
           server,
-          'user',
+          'orderFeature',
+          null,
+        ),
+      'paymentFeature': _i2g7ii4i.PaymentFeatureEndpoint()
+        ..initialize(
+          server,
+          'paymentFeature',
           null,
         ),
       'greeting': _il624ik7.GreetingEndpoint()
@@ -265,16 +269,21 @@ class Endpoints extends _is.EndpointDispatch {
         ),
       },
     );
-    connectors['order'] = _is.EndpointConnector(
-      name: 'order',
-      endpoint: endpoints['order']!,
+    connectors['authFeature'] = _is.EndpointConnector(
+      name: 'authFeature',
+      endpoint: endpoints['authFeature']!,
       methodConnectors: {
-        'createOrder': _is.MethodConnector(
-          name: 'createOrder',
+        'register': _is.MethodConnector(
+          name: 'register',
           params: {
-            'request': _is.ParameterDescription(
-              name: 'request',
-              type: _is.getType<_itze2x1b.CreateOrderRequest>(),
+            'name': _is.ParameterDescription(
+              name: 'name',
+              type: _is.getType<String>(),
+              nullable: false,
+            ),
+            'email': _is.ParameterDescription(
+              name: 'email',
+              type: _is.getType<String>(),
               nullable: false,
             ),
           },
@@ -283,23 +292,50 @@ class Endpoints extends _is.EndpointDispatch {
                 _is.Session session,
                 Map<String, dynamic> params,
               ) async =>
-                  (endpoints['order'] as _itwfdqvf.OrderEndpoint).createOrder(
-                    session,
-                    params['request'],
-                  ),
+                  (endpoints['authFeature'] as _iq40hmnx.AuthFeatureEndpoint)
+                      .register(
+                        session,
+                        params['name'],
+                        params['email'],
+                      ),
+        ),
+        'lookupByEmail': _is.MethodConnector(
+          name: 'lookupByEmail',
+          params: {
+            'email': _is.ParameterDescription(
+              name: 'email',
+              type: _is.getType<String>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['authFeature'] as _iq40hmnx.AuthFeatureEndpoint)
+                      .lookupByEmail(
+                        session,
+                        params['email'],
+                      ),
         ),
       },
     );
-    connectors['user'] = _is.EndpointConnector(
-      name: 'user',
-      endpoint: endpoints['user']!,
+    connectors['orderFeature'] = _is.EndpointConnector(
+      name: 'orderFeature',
+      endpoint: endpoints['orderFeature']!,
       methodConnectors: {
-        'createUser': _is.MethodConnector(
-          name: 'createUser',
+        'placeOrder': _is.MethodConnector(
+          name: 'placeOrder',
           params: {
-            'user': _is.ParameterDescription(
-              name: 'user',
-              type: _is.getType<_iae6yn9p.User>(),
+            'itemCount': _is.ParameterDescription(
+              name: 'itemCount',
+              type: _is.getType<int>(),
+              nullable: false,
+            ),
+            'totalPrice': _is.ParameterDescription(
+              name: 'totalPrice',
+              type: _is.getType<double>(),
               nullable: false,
             ),
           },
@@ -308,21 +344,56 @@ class Endpoints extends _is.EndpointDispatch {
                 _is.Session session,
                 Map<String, dynamic> params,
               ) async =>
-                  (endpoints['user'] as _iymy5306.UserEndpoint).createUser(
-                    session,
-                    params['user'],
-                  ),
+                  (endpoints['orderFeature'] as _i66n1pnl.OrderFeatureEndpoint)
+                      .placeOrder(
+                        session,
+                        params['itemCount'],
+                        params['totalPrice'],
+                      ),
         ),
-        'getUsers': _is.MethodConnector(
-          name: 'getUsers',
+        'listMyOrders': _is.MethodConnector(
+          name: 'listMyOrders',
           params: {},
           call:
               (
                 _is.Session session,
                 Map<String, dynamic> params,
-              ) async => (endpoints['user'] as _iymy5306.UserEndpoint).getUsers(
-                session,
-              ),
+              ) async =>
+                  (endpoints['orderFeature'] as _i66n1pnl.OrderFeatureEndpoint)
+                      .listMyOrders(session),
+        ),
+      },
+    );
+    connectors['paymentFeature'] = _is.EndpointConnector(
+      name: 'paymentFeature',
+      endpoint: endpoints['paymentFeature']!,
+      methodConnectors: {
+        'chargeOrder': _is.MethodConnector(
+          name: 'chargeOrder',
+          params: {
+            'orderId': _is.ParameterDescription(
+              name: 'orderId',
+              type: _is.getType<int>(),
+              nullable: false,
+            ),
+            'amount': _is.ParameterDescription(
+              name: 'amount',
+              type: _is.getType<double>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['paymentFeature']
+                          as _i2g7ii4i.PaymentFeatureEndpoint)
+                      .chargeOrder(
+                        session,
+                        params['orderId'],
+                        params['amount'],
+                      ),
         ),
       },
     );

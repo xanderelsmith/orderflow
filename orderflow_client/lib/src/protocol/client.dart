@@ -12,12 +12,14 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'dart:async' as _ida;
 import 'package:http/http.dart' as _i85jenna;
-import 'package:orderflow_client/src/protocol/create_order_request.dart'
-    as _ik1wfylg;
+import 'package:orderflow_client/src/protocol/features/auth/models/user.dart'
+    as _isiqc00b;
+import 'package:orderflow_client/src/protocol/features/orders/models/order_record.dart'
+    as _ieiuqyoi;
+import 'package:orderflow_client/src/protocol/features/payments/models/payment_record.dart'
+    as _i26hf6cz;
 import 'package:orderflow_client/src/protocol/greetings/greeting.dart'
     as _iwovvxx7;
-import 'package:orderflow_client/src/protocol/order_response.dart' as _iczschlw;
-import 'package:orderflow_client/src/protocol/user.dart' as _ikcn8d35;
 import 'package:serverpod_auth_core_client/serverpod_auth_core_client.dart'
     as _iacc;
 import 'package:serverpod_auth_idp_client/serverpod_auth_idp_client.dart'
@@ -250,44 +252,79 @@ class EndpointJwtRefresh extends _iacc.EndpointRefreshJwtTokens {
       );
 }
 
-/// Pattern 2 (Layered Architecture): Transport / RPC mapping only.
 /// {@category Endpoint}
-class EndpointOrder extends _isc.EndpointRef {
-  EndpointOrder(_isc.EndpointCaller caller) : super(caller);
+class EndpointAuthFeature extends _isc.EndpointRef {
+  EndpointAuthFeature(_isc.EndpointCaller caller) : super(caller);
 
   @override
-  String get name => 'order';
+  String get name => 'authFeature';
 
-  _ida.Future<_iczschlw.OrderResponse> createOrder(
-    _ik1wfylg.CreateOrderRequest request,
-  ) => caller.callServerEndpoint<_iczschlw.OrderResponse>(
-    'order',
-    'createOrder',
-    {'request': request},
+  _ida.Future<_isiqc00b.User> register(
+    String name,
+    String email,
+  ) => caller.callServerEndpoint<_isiqc00b.User>(
+    'authFeature',
+    'register',
+    {
+      'name': name,
+      'email': email,
+    },
   );
+
+  _ida.Future<_isiqc00b.User?> lookupByEmail(String email) =>
+      caller.callServerEndpoint<_isiqc00b.User?>(
+        'authFeature',
+        'lookupByEmail',
+        {'email': email},
+      );
 }
 
-/// Pattern 2 (Layered Architecture): Delegates to UserService.
+/// Pattern 3 (Package by Feature): Vertical slice for orders.
 /// {@category Endpoint}
-class EndpointUser extends _isc.EndpointRef {
-  EndpointUser(_isc.EndpointCaller caller) : super(caller);
+class EndpointOrderFeature extends _isc.EndpointRef {
+  EndpointOrderFeature(_isc.EndpointCaller caller) : super(caller);
 
   @override
-  String get name => 'user';
+  String get name => 'orderFeature';
 
-  _ida.Future<_ikcn8d35.User> createUser(_ikcn8d35.User user) =>
-      caller.callServerEndpoint<_ikcn8d35.User>(
-        'user',
-        'createUser',
-        {'user': user},
-      );
+  _ida.Future<_ieiuqyoi.OrderRecord> placeOrder(
+    int itemCount,
+    double totalPrice,
+  ) => caller.callServerEndpoint<_ieiuqyoi.OrderRecord>(
+    'orderFeature',
+    'placeOrder',
+    {
+      'itemCount': itemCount,
+      'totalPrice': totalPrice,
+    },
+  );
 
-  _ida.Future<List<_ikcn8d35.User>> getUsers() =>
-      caller.callServerEndpoint<List<_ikcn8d35.User>>(
-        'user',
-        'getUsers',
+  _ida.Future<List<_ieiuqyoi.OrderRecord>> listMyOrders() =>
+      caller.callServerEndpoint<List<_ieiuqyoi.OrderRecord>>(
+        'orderFeature',
+        'listMyOrders',
         {},
       );
+}
+
+/// {@category Endpoint}
+class EndpointPaymentFeature extends _isc.EndpointRef {
+  EndpointPaymentFeature(_isc.EndpointCaller caller) : super(caller);
+
+  @override
+  String get name => 'paymentFeature';
+
+  _ida.Future<_i26hf6cz.PaymentRecord> chargeOrder(
+    int orderId,
+    double amount,
+  ) => caller.callServerEndpoint<_i26hf6cz.PaymentRecord>(
+    'paymentFeature',
+    'chargeOrder',
+    {
+      'orderId': orderId,
+      'amount': amount,
+    },
+  );
 }
 
 /// This is an example endpoint that returns a greeting message through
@@ -348,8 +385,9 @@ class Client extends _isc.ServerpodClientShared {
        ) {
     emailIdp = EndpointEmailIdp(this);
     jwtRefresh = EndpointJwtRefresh(this);
-    order = EndpointOrder(this);
-    user = EndpointUser(this);
+    authFeature = EndpointAuthFeature(this);
+    orderFeature = EndpointOrderFeature(this);
+    paymentFeature = EndpointPaymentFeature(this);
     greeting = EndpointGreeting(this);
     modules = Modules(this);
   }
@@ -358,9 +396,11 @@ class Client extends _isc.ServerpodClientShared {
 
   late final EndpointJwtRefresh jwtRefresh;
 
-  late final EndpointOrder order;
+  late final EndpointAuthFeature authFeature;
 
-  late final EndpointUser user;
+  late final EndpointOrderFeature orderFeature;
+
+  late final EndpointPaymentFeature paymentFeature;
 
   late final EndpointGreeting greeting;
 
@@ -370,8 +410,9 @@ class Client extends _isc.ServerpodClientShared {
   Map<String, _isc.EndpointRef> get endpointRefLookup => {
     'emailIdp': emailIdp,
     'jwtRefresh': jwtRefresh,
-    'order': order,
-    'user': user,
+    'authFeature': authFeature,
+    'orderFeature': orderFeature,
+    'paymentFeature': paymentFeature,
     'greeting': greeting,
   };
 

@@ -1,3 +1,0 @@
-class: CreateOrderRequest
-fields:
-  amount: double

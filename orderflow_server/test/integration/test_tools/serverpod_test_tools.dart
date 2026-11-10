@@ -13,13 +13,14 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'dart:async' as _ida;
 import 'dart:io' as _idi;
-import 'package:orderflow_server/src/generated/create_order_request.dart'
-    as _itze2x1b;
+import 'package:orderflow_server/src/generated/features/auth/models/user.dart'
+    as _ig4ltc2j;
+import 'package:orderflow_server/src/generated/features/orders/models/order_record.dart'
+    as _izn5x0o0;
+import 'package:orderflow_server/src/generated/features/payments/models/payment_record.dart'
+    as _icgty31l;
 import 'package:orderflow_server/src/generated/greetings/greeting.dart'
     as _i4e52350;
-import 'package:orderflow_server/src/generated/order_response.dart'
-    as _ipnqauv9;
-import 'package:orderflow_server/src/generated/user.dart' as _iae6yn9p;
 import 'package:serverpod/serverpod.dart' as _is;
 import 'package:serverpod_auth_core_server/serverpod_auth_core_server.dart'
     as _iacs;
@@ -161,9 +162,11 @@ class TestEndpoints {
 
   late final _JwtRefreshEndpoint jwtRefresh;
 
-  late final _OrderEndpoint order;
+  late final _AuthFeatureEndpoint authFeature;
 
-  late final _UserEndpoint user;
+  late final _OrderFeatureEndpoint orderFeature;
+
+  late final _PaymentFeatureEndpoint paymentFeature;
 
   late final _GreetingEndpoint greeting;
 }
@@ -183,11 +186,15 @@ class _InternalTestEndpoints extends TestEndpoints
       endpoints,
       serializationManager,
     );
-    order = _OrderEndpoint(
+    authFeature = _AuthFeatureEndpoint(
       endpoints,
       serializationManager,
     );
-    user = _UserEndpoint(
+    orderFeature = _OrderFeatureEndpoint(
+      endpoints,
+      serializationManager,
+    );
+    paymentFeature = _PaymentFeatureEndpoint(
       endpoints,
       serializationManager,
     );
@@ -516,8 +523,8 @@ class _JwtRefreshEndpoint {
   }
 }
 
-class _OrderEndpoint {
-  _OrderEndpoint(
+class _AuthFeatureEndpoint {
+  _AuthFeatureEndpoint(
     this._endpointDispatch,
     this._serializationManager,
   );
@@ -526,22 +533,26 @@ class _OrderEndpoint {
 
   final _is.SerializationManager _serializationManager;
 
-  _ida.Future<_ipnqauv9.OrderResponse> createOrder(
+  _ida.Future<_ig4ltc2j.User> register(
     _ist.TestSessionBuilder sessionBuilder,
-    _itze2x1b.CreateOrderRequest request,
+    String name,
+    String email,
   ) async {
     return _ist.callAwaitableFunctionAndHandleExceptions(() async {
       var _localUniqueSession =
           (sessionBuilder as _ist.InternalTestSessionBuilder).internalBuild(
-            endpoint: 'order',
-            method: 'createOrder',
+            endpoint: 'authFeature',
+            method: 'register',
           );
       try {
         var _localCallContext = await _endpointDispatch.getMethodCallContext(
           createSessionCallback: (_) => _localUniqueSession,
-          endpointPath: 'order',
-          methodName: 'createOrder',
-          parameters: _ist.testObjectToJson({'request': request}),
+          endpointPath: 'authFeature',
+          methodName: 'register',
+          parameters: _ist.testObjectToJson({
+            'name': name,
+            'email': email,
+          }),
           serializationManager: _serializationManager,
         );
         var _localReturnValue =
@@ -549,7 +560,38 @@ class _OrderEndpoint {
                   _localUniqueSession,
                   _localCallContext.arguments,
                 )
-                as _ida.Future<_ipnqauv9.OrderResponse>);
+                as _ida.Future<_ig4ltc2j.User>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _ida.Future<_ig4ltc2j.User?> lookupByEmail(
+    _ist.TestSessionBuilder sessionBuilder,
+    String email,
+  ) async {
+    return _ist.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _ist.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'authFeature',
+            method: 'lookupByEmail',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'authFeature',
+          methodName: 'lookupByEmail',
+          parameters: _ist.testObjectToJson({'email': email}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _ida.Future<_ig4ltc2j.User?>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -558,8 +600,8 @@ class _OrderEndpoint {
   }
 }
 
-class _UserEndpoint {
-  _UserEndpoint(
+class _OrderFeatureEndpoint {
+  _OrderFeatureEndpoint(
     this._endpointDispatch,
     this._serializationManager,
   );
@@ -568,22 +610,26 @@ class _UserEndpoint {
 
   final _is.SerializationManager _serializationManager;
 
-  _ida.Future<_iae6yn9p.User> createUser(
+  _ida.Future<_izn5x0o0.OrderRecord> placeOrder(
     _ist.TestSessionBuilder sessionBuilder,
-    _iae6yn9p.User user,
+    int itemCount,
+    double totalPrice,
   ) async {
     return _ist.callAwaitableFunctionAndHandleExceptions(() async {
       var _localUniqueSession =
           (sessionBuilder as _ist.InternalTestSessionBuilder).internalBuild(
-            endpoint: 'user',
-            method: 'createUser',
+            endpoint: 'orderFeature',
+            method: 'placeOrder',
           );
       try {
         var _localCallContext = await _endpointDispatch.getMethodCallContext(
           createSessionCallback: (_) => _localUniqueSession,
-          endpointPath: 'user',
-          methodName: 'createUser',
-          parameters: _ist.testObjectToJson({'user': user}),
+          endpointPath: 'orderFeature',
+          methodName: 'placeOrder',
+          parameters: _ist.testObjectToJson({
+            'itemCount': itemCount,
+            'totalPrice': totalPrice,
+          }),
           serializationManager: _serializationManager,
         );
         var _localReturnValue =
@@ -591,7 +637,7 @@ class _UserEndpoint {
                   _localUniqueSession,
                   _localCallContext.arguments,
                 )
-                as _ida.Future<_iae6yn9p.User>);
+                as _ida.Future<_izn5x0o0.OrderRecord>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -599,20 +645,20 @@ class _UserEndpoint {
     });
   }
 
-  _ida.Future<List<_iae6yn9p.User>> getUsers(
+  _ida.Future<List<_izn5x0o0.OrderRecord>> listMyOrders(
     _ist.TestSessionBuilder sessionBuilder,
   ) async {
     return _ist.callAwaitableFunctionAndHandleExceptions(() async {
       var _localUniqueSession =
           (sessionBuilder as _ist.InternalTestSessionBuilder).internalBuild(
-            endpoint: 'user',
-            method: 'getUsers',
+            endpoint: 'orderFeature',
+            method: 'listMyOrders',
           );
       try {
         var _localCallContext = await _endpointDispatch.getMethodCallContext(
           createSessionCallback: (_) => _localUniqueSession,
-          endpointPath: 'user',
-          methodName: 'getUsers',
+          endpointPath: 'orderFeature',
+          methodName: 'listMyOrders',
           parameters: _ist.testObjectToJson({}),
           serializationManager: _serializationManager,
         );
@@ -621,7 +667,53 @@ class _UserEndpoint {
                   _localUniqueSession,
                   _localCallContext.arguments,
                 )
-                as _ida.Future<List<_iae6yn9p.User>>);
+                as _ida.Future<List<_izn5x0o0.OrderRecord>>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+}
+
+class _PaymentFeatureEndpoint {
+  _PaymentFeatureEndpoint(
+    this._endpointDispatch,
+    this._serializationManager,
+  );
+
+  final _is.EndpointDispatch _endpointDispatch;
+
+  final _is.SerializationManager _serializationManager;
+
+  _ida.Future<_icgty31l.PaymentRecord> chargeOrder(
+    _ist.TestSessionBuilder sessionBuilder,
+    int orderId,
+    double amount,
+  ) async {
+    return _ist.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _ist.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'paymentFeature',
+            method: 'chargeOrder',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'paymentFeature',
+          methodName: 'chargeOrder',
+          parameters: _ist.testObjectToJson({
+            'orderId': orderId,
+            'amount': amount,
+          }),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _ida.Future<_icgty31l.PaymentRecord>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();

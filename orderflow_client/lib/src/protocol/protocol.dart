@@ -11,24 +11,25 @@
 // ignore_for_file: dead_code, unnecessary_type_check
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:orderflow_client/src/protocol/user.dart' as _ikcn8d35;
+import 'package:orderflow_client/src/protocol/features/orders/models/order_record.dart'
+    as _ieiuqyoi;
 import 'package:serverpod_auth_core_client/serverpod_auth_core_client.dart'
     as _iacc;
 import 'package:serverpod_auth_idp_client/serverpod_auth_idp_client.dart'
     as _iaic;
 import 'package:serverpod_client/serverpod_client.dart' as _isc;
-import 'create_order_request.dart' as _iuro41m0;
-import 'customer_order.dart' as _ifseghpo;
-import 'endpoint_exception.dart' as _imcp5fbg;
+import 'features/auth/models/user.dart' as _iq3jm3fb;
+import 'features/orders/models/endpoint_exception.dart' as _iu4eqa4d;
+import 'features/orders/models/order_item.dart' as _iqdkhoq3;
+import 'features/orders/models/order_record.dart' as _iq610txb;
+import 'features/payments/models/payment_record.dart' as _iddcrq2a;
 import 'greetings/greeting.dart' as _izw8z7ou;
-import 'order_response.dart' as _itwljpn2;
-import 'user.dart' as _iv73i78m;
-export 'create_order_request.dart';
-export 'customer_order.dart';
-export 'endpoint_exception.dart';
+export 'features/auth/models/user.dart';
+export 'features/orders/models/endpoint_exception.dart';
+export 'features/orders/models/order_item.dart';
+export 'features/orders/models/order_record.dart';
+export 'features/payments/models/payment_record.dart';
 export 'greetings/greeting.dart';
-export 'order_response.dart';
-export 'user.dart';
 export 'client.dart';
 
 class Protocol extends _isc.SerializationManager {
@@ -65,48 +66,48 @@ class Protocol extends _isc.SerializationManager {
       }
     }
 
-    if (t == _iuro41m0.CreateOrderRequest) {
-      return _iuro41m0.CreateOrderRequest.fromJson(data) as T;
+    if (t == _iq3jm3fb.User) {
+      return _iq3jm3fb.User.fromJson(data) as T;
     }
-    if (t == _ifseghpo.CustomerOrder) {
-      return _ifseghpo.CustomerOrder.fromJson(data) as T;
+    if (t == _iu4eqa4d.EndpointException) {
+      return _iu4eqa4d.EndpointException.fromJson(data) as T;
     }
-    if (t == _imcp5fbg.EndpointException) {
-      return _imcp5fbg.EndpointException.fromJson(data) as T;
+    if (t == _iqdkhoq3.OrderItem) {
+      return _iqdkhoq3.OrderItem.fromJson(data) as T;
+    }
+    if (t == _iq610txb.OrderRecord) {
+      return _iq610txb.OrderRecord.fromJson(data) as T;
+    }
+    if (t == _iddcrq2a.PaymentRecord) {
+      return _iddcrq2a.PaymentRecord.fromJson(data) as T;
     }
     if (t == _izw8z7ou.Greeting) {
       return _izw8z7ou.Greeting.fromJson(data) as T;
     }
-    if (t == _itwljpn2.OrderResponse) {
-      return _itwljpn2.OrderResponse.fromJson(data) as T;
+    if (t == _isc.getType<_iq3jm3fb.User?>()) {
+      return (data != null ? _iq3jm3fb.User.fromJson(data) : null) as T;
     }
-    if (t == _iv73i78m.User) {
-      return _iv73i78m.User.fromJson(data) as T;
-    }
-    if (t == _isc.getType<_iuro41m0.CreateOrderRequest?>()) {
-      return (data != null ? _iuro41m0.CreateOrderRequest.fromJson(data) : null)
+    if (t == _isc.getType<_iu4eqa4d.EndpointException?>()) {
+      return (data != null ? _iu4eqa4d.EndpointException.fromJson(data) : null)
           as T;
     }
-    if (t == _isc.getType<_ifseghpo.CustomerOrder?>()) {
-      return (data != null ? _ifseghpo.CustomerOrder.fromJson(data) : null)
-          as T;
+    if (t == _isc.getType<_iqdkhoq3.OrderItem?>()) {
+      return (data != null ? _iqdkhoq3.OrderItem.fromJson(data) : null) as T;
     }
-    if (t == _isc.getType<_imcp5fbg.EndpointException?>()) {
-      return (data != null ? _imcp5fbg.EndpointException.fromJson(data) : null)
+    if (t == _isc.getType<_iq610txb.OrderRecord?>()) {
+      return (data != null ? _iq610txb.OrderRecord.fromJson(data) : null) as T;
+    }
+    if (t == _isc.getType<_iddcrq2a.PaymentRecord?>()) {
+      return (data != null ? _iddcrq2a.PaymentRecord.fromJson(data) : null)
           as T;
     }
     if (t == _isc.getType<_izw8z7ou.Greeting?>()) {
       return (data != null ? _izw8z7ou.Greeting.fromJson(data) : null) as T;
     }
-    if (t == _isc.getType<_itwljpn2.OrderResponse?>()) {
-      return (data != null ? _itwljpn2.OrderResponse.fromJson(data) : null)
-          as T;
-    }
-    if (t == _isc.getType<_iv73i78m.User?>()) {
-      return (data != null ? _iv73i78m.User.fromJson(data) : null) as T;
-    }
-    if (t == List<_ikcn8d35.User>) {
-      return (data as List).map((e) => deserialize<_ikcn8d35.User>(e)).toList()
+    if (t == List<_ieiuqyoi.OrderRecord>) {
+      return (data as List)
+              .map((e) => deserialize<_ieiuqyoi.OrderRecord>(e))
+              .toList()
           as T;
     }
     try {
@@ -120,12 +121,12 @@ class Protocol extends _isc.SerializationManager {
 
   static String? getClassNameForType(Type type) {
     return switch (type) {
-      _iuro41m0.CreateOrderRequest => 'CreateOrderRequest',
-      _ifseghpo.CustomerOrder => 'CustomerOrder',
-      _imcp5fbg.EndpointException => 'EndpointException',
+      _iq3jm3fb.User => 'User',
+      _iu4eqa4d.EndpointException => 'EndpointException',
+      _iqdkhoq3.OrderItem => 'OrderItem',
+      _iq610txb.OrderRecord => 'OrderRecord',
+      _iddcrq2a.PaymentRecord => 'PaymentRecord',
       _izw8z7ou.Greeting => 'Greeting',
-      _itwljpn2.OrderResponse => 'OrderResponse',
-      _iv73i78m.User => 'User',
       _ => null,
     };
   }
@@ -140,18 +141,18 @@ class Protocol extends _isc.SerializationManager {
     }
 
     switch (data) {
-      case _iuro41m0.CreateOrderRequest():
-        return 'CreateOrderRequest';
-      case _ifseghpo.CustomerOrder():
-        return 'CustomerOrder';
-      case _imcp5fbg.EndpointException():
+      case _iq3jm3fb.User():
+        return 'User';
+      case _iu4eqa4d.EndpointException():
         return 'EndpointException';
+      case _iqdkhoq3.OrderItem():
+        return 'OrderItem';
+      case _iq610txb.OrderRecord():
+        return 'OrderRecord';
+      case _iddcrq2a.PaymentRecord():
+        return 'PaymentRecord';
       case _izw8z7ou.Greeting():
         return 'Greeting';
-      case _itwljpn2.OrderResponse():
-        return 'OrderResponse';
-      case _iv73i78m.User():
-        return 'User';
     }
     className = _iaic.Protocol().getClassNameForObject(data);
     if (className != null) {
@@ -174,23 +175,23 @@ class Protocol extends _isc.SerializationManager {
     if (dataClassName is! String) {
       return super.deserializeByClassName(data);
     }
-    if (dataClassName == 'CreateOrderRequest') {
-      return deserialize<_iuro41m0.CreateOrderRequest>(data['data']);
-    }
-    if (dataClassName == 'CustomerOrder') {
-      return deserialize<_ifseghpo.CustomerOrder>(data['data']);
+    if (dataClassName == 'User') {
+      return deserialize<_iq3jm3fb.User>(data['data']);
     }
     if (dataClassName == 'EndpointException') {
-      return deserialize<_imcp5fbg.EndpointException>(data['data']);
+      return deserialize<_iu4eqa4d.EndpointException>(data['data']);
+    }
+    if (dataClassName == 'OrderItem') {
+      return deserialize<_iqdkhoq3.OrderItem>(data['data']);
+    }
+    if (dataClassName == 'OrderRecord') {
+      return deserialize<_iq610txb.OrderRecord>(data['data']);
+    }
+    if (dataClassName == 'PaymentRecord') {
+      return deserialize<_iddcrq2a.PaymentRecord>(data['data']);
     }
     if (dataClassName == 'Greeting') {
       return deserialize<_izw8z7ou.Greeting>(data['data']);
-    }
-    if (dataClassName == 'OrderResponse') {
-      return deserialize<_itwljpn2.OrderResponse>(data['data']);
-    }
-    if (dataClassName == 'User') {
-      return deserialize<_iv73i78m.User>(data['data']);
     }
     if (dataClassName.startsWith('serverpod_auth_idp.')) {
       data['className'] = dataClassName.substring(19);

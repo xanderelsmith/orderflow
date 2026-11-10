@@ -12,27 +12,30 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _isc;
 
-abstract class CustomerOrder
+abstract class PaymentRecord
     implements _isc.SerializableModel, _isc.ProtocolSerialization {
-  CustomerOrder._({
+  PaymentRecord._({
     this.id,
-    required this.userId,
-    required this.total,
+    required this.orderId,
+    required this.amount,
+    required this.status,
     required this.createdAt,
   });
 
-  factory CustomerOrder({
+  factory PaymentRecord({
     int? id,
-    required String userId,
-    required double total,
+    required int orderId,
+    required double amount,
+    required String status,
     required DateTime createdAt,
-  }) = _CustomerOrderImpl;
+  }) = _PaymentRecordImpl;
 
-  factory CustomerOrder.fromJson(Map<String, dynamic> jsonSerialization) {
-    return CustomerOrder(
+  factory PaymentRecord.fromJson(Map<String, dynamic> jsonSerialization) {
+    return PaymentRecord(
       id: jsonSerialization['id'] as int?,
-      userId: jsonSerialization['userId'] as String,
-      total: (jsonSerialization['total'] as num).toDouble(),
+      orderId: jsonSerialization['orderId'] as int,
+      amount: (jsonSerialization['amount'] as num).toDouble(),
+      status: jsonSerialization['status'] as String,
       createdAt: _isc.DateTimeJsonExtension.fromJson(
         jsonSerialization['createdAt'],
       ),
@@ -44,28 +47,32 @@ abstract class CustomerOrder
   /// the id will be null.
   int? id;
 
-  String userId;
+  int orderId;
 
-  double total;
+  double amount;
+
+  String status;
 
   DateTime createdAt;
 
-  /// Returns a shallow copy of this [CustomerOrder]
+  /// Returns a shallow copy of this [PaymentRecord]
   /// with some or all fields replaced by the given arguments.
   @_isc.useResult
-  CustomerOrder copyWith({
+  PaymentRecord copyWith({
     int? id,
-    String? userId,
-    double? total,
+    int? orderId,
+    double? amount,
+    String? status,
     DateTime? createdAt,
   });
   @override
   Map<String, dynamic> toJson() {
     return {
-      '__className__': 'CustomerOrder',
+      '__className__': 'PaymentRecord',
       if (id != null) 'id': id,
-      'userId': userId,
-      'total': total,
+      'orderId': orderId,
+      'amount': amount,
+      'status': status,
       'createdAt': createdAt.toJson(),
     };
   }
@@ -73,10 +80,11 @@ abstract class CustomerOrder
   @override
   Map<String, dynamic> toJsonForProtocol() {
     return {
-      '__className__': 'CustomerOrder',
+      '__className__': 'PaymentRecord',
       if (id != null) 'id': id,
-      'userId': userId,
-      'total': total,
+      'orderId': orderId,
+      'amount': amount,
+      'status': status,
       'createdAt': createdAt.toJson(),
     };
   }
@@ -89,33 +97,37 @@ abstract class CustomerOrder
 
 class _Undefined {}
 
-class _CustomerOrderImpl extends CustomerOrder {
-  _CustomerOrderImpl({
+class _PaymentRecordImpl extends PaymentRecord {
+  _PaymentRecordImpl({
     int? id,
-    required String userId,
-    required double total,
+    required int orderId,
+    required double amount,
+    required String status,
     required DateTime createdAt,
   }) : super._(
          id: id,
-         userId: userId,
-         total: total,
+         orderId: orderId,
+         amount: amount,
+         status: status,
          createdAt: createdAt,
        );
 
-  /// Returns a shallow copy of this [CustomerOrder]
+  /// Returns a shallow copy of this [PaymentRecord]
   /// with some or all fields replaced by the given arguments.
   @_isc.useResult
   @override
-  CustomerOrder copyWith({
+  PaymentRecord copyWith({
     Object? id = _Undefined,
-    String? userId,
-    double? total,
+    int? orderId,
+    double? amount,
+    String? status,
     DateTime? createdAt,
   }) {
-    return CustomerOrder(
+    return PaymentRecord(
       id: id is int? ? id : this.id,
-      userId: userId ?? this.userId,
-      total: total ?? this.total,
+      orderId: orderId ?? this.orderId,
+      amount: amount ?? this.amount,
+      status: status ?? this.status,
       createdAt: createdAt ?? this.createdAt,
     );
   }

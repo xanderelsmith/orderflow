@@ -1,0 +1,6 @@
+class: OrderRecord
+table: order_records
+fields:
+  userId: String
+  itemCount: int
+  totalPrice: double

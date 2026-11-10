@@ -1,0 +1,7 @@
+class: OrderItem
+table: order_items
+fields:
+  orderId: int
+  sku: String
+  quantity: int
+  unitPrice: double
