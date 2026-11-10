@@ -1,7 +1,0 @@
-class: PaymentRecord
-table: payment_records
-fields:
-  orderId: int
-  amount: double
-  status: String
-  createdAt: DateTime

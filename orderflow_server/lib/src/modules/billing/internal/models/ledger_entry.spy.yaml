@@ -1,0 +1,7 @@
+# PRIVATE TO BILLING - Other modules CANNOT touch this
+class: LedgerEntry
+table: ledger_entry
+fields:
+  userId: int
+  amount: double
+  createdAt: DateTime

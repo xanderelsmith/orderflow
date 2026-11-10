@@ -1,0 +1,7 @@
+# PUBLIC CONTRACT - Safe to share across modules
+class: InvoiceDto
+fields:
+  ledgerEntryId: int
+  userId: int
+  amount: double
+  issuedAt: DateTime

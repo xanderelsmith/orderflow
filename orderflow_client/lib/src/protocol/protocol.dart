@@ -11,25 +11,21 @@
 // ignore_for_file: dead_code, unnecessary_type_check
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:orderflow_client/src/protocol/features/orders/models/order_record.dart'
-    as _ieiuqyoi;
 import 'package:serverpod_auth_core_client/serverpod_auth_core_client.dart'
     as _iacc;
 import 'package:serverpod_auth_idp_client/serverpod_auth_idp_client.dart'
     as _iaic;
 import 'package:serverpod_client/serverpod_client.dart' as _isc;
-import 'features/auth/models/user.dart' as _iq3jm3fb;
-import 'features/orders/models/endpoint_exception.dart' as _iu4eqa4d;
-import 'features/orders/models/order_item.dart' as _iqdkhoq3;
-import 'features/orders/models/order_record.dart' as _iq610txb;
-import 'features/payments/models/payment_record.dart' as _iddcrq2a;
 import 'greetings/greeting.dart' as _izw8z7ou;
-export 'features/auth/models/user.dart';
-export 'features/orders/models/endpoint_exception.dart';
-export 'features/orders/models/order_item.dart';
-export 'features/orders/models/order_record.dart';
-export 'features/payments/models/payment_record.dart';
+import 'modules/billing/api/models/invoice_dto.dart' as _ijwopx60;
+import 'modules/billing/internal/models/ledger_entry.dart' as _injvkp97;
+import 'modules/identity/api/models/user_summary.dart' as _i8pw87en;
+import 'modules/identity/internal/models/user_account.dart' as _i0978twx;
 export 'greetings/greeting.dart';
+export 'modules/billing/api/models/invoice_dto.dart';
+export 'modules/billing/internal/models/ledger_entry.dart';
+export 'modules/identity/api/models/user_summary.dart';
+export 'modules/identity/internal/models/user_account.dart';
 export 'client.dart';
 
 class Protocol extends _isc.SerializationManager {
@@ -66,49 +62,35 @@ class Protocol extends _isc.SerializationManager {
       }
     }
 
-    if (t == _iq3jm3fb.User) {
-      return _iq3jm3fb.User.fromJson(data) as T;
-    }
-    if (t == _iu4eqa4d.EndpointException) {
-      return _iu4eqa4d.EndpointException.fromJson(data) as T;
-    }
-    if (t == _iqdkhoq3.OrderItem) {
-      return _iqdkhoq3.OrderItem.fromJson(data) as T;
-    }
-    if (t == _iq610txb.OrderRecord) {
-      return _iq610txb.OrderRecord.fromJson(data) as T;
-    }
-    if (t == _iddcrq2a.PaymentRecord) {
-      return _iddcrq2a.PaymentRecord.fromJson(data) as T;
-    }
     if (t == _izw8z7ou.Greeting) {
       return _izw8z7ou.Greeting.fromJson(data) as T;
     }
-    if (t == _isc.getType<_iq3jm3fb.User?>()) {
-      return (data != null ? _iq3jm3fb.User.fromJson(data) : null) as T;
+    if (t == _ijwopx60.InvoiceDto) {
+      return _ijwopx60.InvoiceDto.fromJson(data) as T;
     }
-    if (t == _isc.getType<_iu4eqa4d.EndpointException?>()) {
-      return (data != null ? _iu4eqa4d.EndpointException.fromJson(data) : null)
-          as T;
+    if (t == _injvkp97.LedgerEntry) {
+      return _injvkp97.LedgerEntry.fromJson(data) as T;
     }
-    if (t == _isc.getType<_iqdkhoq3.OrderItem?>()) {
-      return (data != null ? _iqdkhoq3.OrderItem.fromJson(data) : null) as T;
+    if (t == _i8pw87en.UserSummary) {
+      return _i8pw87en.UserSummary.fromJson(data) as T;
     }
-    if (t == _isc.getType<_iq610txb.OrderRecord?>()) {
-      return (data != null ? _iq610txb.OrderRecord.fromJson(data) : null) as T;
-    }
-    if (t == _isc.getType<_iddcrq2a.PaymentRecord?>()) {
-      return (data != null ? _iddcrq2a.PaymentRecord.fromJson(data) : null)
-          as T;
+    if (t == _i0978twx.UserAccount) {
+      return _i0978twx.UserAccount.fromJson(data) as T;
     }
     if (t == _isc.getType<_izw8z7ou.Greeting?>()) {
       return (data != null ? _izw8z7ou.Greeting.fromJson(data) : null) as T;
     }
-    if (t == List<_ieiuqyoi.OrderRecord>) {
-      return (data as List)
-              .map((e) => deserialize<_ieiuqyoi.OrderRecord>(e))
-              .toList()
-          as T;
+    if (t == _isc.getType<_ijwopx60.InvoiceDto?>()) {
+      return (data != null ? _ijwopx60.InvoiceDto.fromJson(data) : null) as T;
+    }
+    if (t == _isc.getType<_injvkp97.LedgerEntry?>()) {
+      return (data != null ? _injvkp97.LedgerEntry.fromJson(data) : null) as T;
+    }
+    if (t == _isc.getType<_i8pw87en.UserSummary?>()) {
+      return (data != null ? _i8pw87en.UserSummary.fromJson(data) : null) as T;
+    }
+    if (t == _isc.getType<_i0978twx.UserAccount?>()) {
+      return (data != null ? _i0978twx.UserAccount.fromJson(data) : null) as T;
     }
     try {
       return _iaic.Protocol().deserialize<T>(data, t);
@@ -121,12 +103,11 @@ class Protocol extends _isc.SerializationManager {
 
   static String? getClassNameForType(Type type) {
     return switch (type) {
-      _iq3jm3fb.User => 'User',
-      _iu4eqa4d.EndpointException => 'EndpointException',
-      _iqdkhoq3.OrderItem => 'OrderItem',
-      _iq610txb.OrderRecord => 'OrderRecord',
-      _iddcrq2a.PaymentRecord => 'PaymentRecord',
       _izw8z7ou.Greeting => 'Greeting',
+      _ijwopx60.InvoiceDto => 'InvoiceDto',
+      _injvkp97.LedgerEntry => 'LedgerEntry',
+      _i8pw87en.UserSummary => 'UserSummary',
+      _i0978twx.UserAccount => 'UserAccount',
       _ => null,
     };
   }
@@ -141,18 +122,16 @@ class Protocol extends _isc.SerializationManager {
     }
 
     switch (data) {
-      case _iq3jm3fb.User():
-        return 'User';
-      case _iu4eqa4d.EndpointException():
-        return 'EndpointException';
-      case _iqdkhoq3.OrderItem():
-        return 'OrderItem';
-      case _iq610txb.OrderRecord():
-        return 'OrderRecord';
-      case _iddcrq2a.PaymentRecord():
-        return 'PaymentRecord';
       case _izw8z7ou.Greeting():
         return 'Greeting';
+      case _ijwopx60.InvoiceDto():
+        return 'InvoiceDto';
+      case _injvkp97.LedgerEntry():
+        return 'LedgerEntry';
+      case _i8pw87en.UserSummary():
+        return 'UserSummary';
+      case _i0978twx.UserAccount():
+        return 'UserAccount';
     }
     className = _iaic.Protocol().getClassNameForObject(data);
     if (className != null) {
@@ -175,23 +154,20 @@ class Protocol extends _isc.SerializationManager {
     if (dataClassName is! String) {
       return super.deserializeByClassName(data);
     }
-    if (dataClassName == 'User') {
-      return deserialize<_iq3jm3fb.User>(data['data']);
-    }
-    if (dataClassName == 'EndpointException') {
-      return deserialize<_iu4eqa4d.EndpointException>(data['data']);
-    }
-    if (dataClassName == 'OrderItem') {
-      return deserialize<_iqdkhoq3.OrderItem>(data['data']);
-    }
-    if (dataClassName == 'OrderRecord') {
-      return deserialize<_iq610txb.OrderRecord>(data['data']);
-    }
-    if (dataClassName == 'PaymentRecord') {
-      return deserialize<_iddcrq2a.PaymentRecord>(data['data']);
-    }
     if (dataClassName == 'Greeting') {
       return deserialize<_izw8z7ou.Greeting>(data['data']);
+    }
+    if (dataClassName == 'InvoiceDto') {
+      return deserialize<_ijwopx60.InvoiceDto>(data['data']);
+    }
+    if (dataClassName == 'LedgerEntry') {
+      return deserialize<_injvkp97.LedgerEntry>(data['data']);
+    }
+    if (dataClassName == 'UserSummary') {
+      return deserialize<_i8pw87en.UserSummary>(data['data']);
+    }
+    if (dataClassName == 'UserAccount') {
+      return deserialize<_i0978twx.UserAccount>(data['data']);
     }
     if (dataClassName.startsWith('serverpod_auth_idp.')) {
       data['className'] = dataClassName.substring(19);

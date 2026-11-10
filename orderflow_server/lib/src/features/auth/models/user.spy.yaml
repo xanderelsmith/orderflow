@@ -1,6 +1,0 @@
-class: User
-table: app_users
-fields:
-  name: String
-  email: String
-  isActive: bool
