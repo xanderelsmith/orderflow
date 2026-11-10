@@ -1,13 +1,16 @@
 import 'package:serverpod/serverpod.dart';
 import '../generated/protocol.dart';
+import '../services/user_service.dart';
 
-/// Pattern 1 (Simple MVC): Direct ORM calls inside the endpoint.
+/// Pattern 2 (Layered Architecture): Delegates to UserService.
 class UserEndpoint extends Endpoint {
+  final _userService = UserService();
+
   Future<User> createUser(Session session, User user) async {
-    return await User.db.insertRow(session, user);
+    return await _userService.createUser(session, user);
   }
 
   Future<List<User>> getUsers(Session session) async {
-    return await User.db.find(session);
+    return await _userService.listUsers(session);
   }
 }

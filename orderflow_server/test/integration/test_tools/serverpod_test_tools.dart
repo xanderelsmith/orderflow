@@ -13,9 +13,12 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'dart:async' as _ida;
 import 'dart:io' as _idi;
+import 'package:orderflow_server/src/generated/create_order_request.dart'
+    as _itze2x1b;
 import 'package:orderflow_server/src/generated/greetings/greeting.dart'
     as _i4e52350;
-import 'package:orderflow_server/src/generated/task.dart' as _i97zzhd3;
+import 'package:orderflow_server/src/generated/order_response.dart'
+    as _ipnqauv9;
 import 'package:orderflow_server/src/generated/user.dart' as _iae6yn9p;
 import 'package:serverpod/serverpod.dart' as _is;
 import 'package:serverpod_auth_core_server/serverpod_auth_core_server.dart'
@@ -158,7 +161,7 @@ class TestEndpoints {
 
   late final _JwtRefreshEndpoint jwtRefresh;
 
-  late final _TaskEndpoint task;
+  late final _OrderEndpoint order;
 
   late final _UserEndpoint user;
 
@@ -180,7 +183,7 @@ class _InternalTestEndpoints extends TestEndpoints
       endpoints,
       serializationManager,
     );
-    task = _TaskEndpoint(
+    order = _OrderEndpoint(
       endpoints,
       serializationManager,
     );
@@ -513,8 +516,8 @@ class _JwtRefreshEndpoint {
   }
 }
 
-class _TaskEndpoint {
-  _TaskEndpoint(
+class _OrderEndpoint {
+  _OrderEndpoint(
     this._endpointDispatch,
     this._serializationManager,
   );
@@ -523,22 +526,22 @@ class _TaskEndpoint {
 
   final _is.SerializationManager _serializationManager;
 
-  _ida.Future<_i97zzhd3.Task> createTask(
+  _ida.Future<_ipnqauv9.OrderResponse> createOrder(
     _ist.TestSessionBuilder sessionBuilder,
-    _i97zzhd3.Task task,
+    _itze2x1b.CreateOrderRequest request,
   ) async {
     return _ist.callAwaitableFunctionAndHandleExceptions(() async {
       var _localUniqueSession =
           (sessionBuilder as _ist.InternalTestSessionBuilder).internalBuild(
-            endpoint: 'task',
-            method: 'createTask',
+            endpoint: 'order',
+            method: 'createOrder',
           );
       try {
         var _localCallContext = await _endpointDispatch.getMethodCallContext(
           createSessionCallback: (_) => _localUniqueSession,
-          endpointPath: 'task',
-          methodName: 'createTask',
-          parameters: _ist.testObjectToJson({'task': task}),
+          endpointPath: 'order',
+          methodName: 'createOrder',
+          parameters: _ist.testObjectToJson({'request': request}),
           serializationManager: _serializationManager,
         );
         var _localReturnValue =
@@ -546,37 +549,7 @@ class _TaskEndpoint {
                   _localUniqueSession,
                   _localCallContext.arguments,
                 )
-                as _ida.Future<_i97zzhd3.Task>);
-        return _localReturnValue;
-      } finally {
-        await _localUniqueSession.close();
-      }
-    });
-  }
-
-  _ida.Future<List<_i97zzhd3.Task>> getTasks(
-    _ist.TestSessionBuilder sessionBuilder,
-  ) async {
-    return _ist.callAwaitableFunctionAndHandleExceptions(() async {
-      var _localUniqueSession =
-          (sessionBuilder as _ist.InternalTestSessionBuilder).internalBuild(
-            endpoint: 'task',
-            method: 'getTasks',
-          );
-      try {
-        var _localCallContext = await _endpointDispatch.getMethodCallContext(
-          createSessionCallback: (_) => _localUniqueSession,
-          endpointPath: 'task',
-          methodName: 'getTasks',
-          parameters: _ist.testObjectToJson({}),
-          serializationManager: _serializationManager,
-        );
-        var _localReturnValue =
-            await (_localCallContext.method.call(
-                  _localUniqueSession,
-                  _localCallContext.arguments,
-                )
-                as _ida.Future<List<_i97zzhd3.Task>>);
+                as _ida.Future<_ipnqauv9.OrderResponse>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();

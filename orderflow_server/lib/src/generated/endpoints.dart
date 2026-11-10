@@ -10,7 +10,8 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:orderflow_server/src/generated/task.dart' as _i97zzhd3;
+import 'package:orderflow_server/src/generated/create_order_request.dart'
+    as _itze2x1b;
 import 'package:orderflow_server/src/generated/user.dart' as _iae6yn9p;
 import 'package:serverpod/serverpod.dart' as _is;
 import 'package:serverpod_auth_core_server/serverpod_auth_core_server.dart'
@@ -19,7 +20,7 @@ import 'package:serverpod_auth_idp_server/serverpod_auth_idp_server.dart'
     as _iais;
 import '../auth/email_idp_endpoint.dart' as _iuc1hd5t;
 import '../auth/jwt_refresh_endpoint.dart' as _inwq3ztq;
-import '../endpoints/task_endpoint.dart' as _idmllfay;
+import '../endpoints/order_endpoint.dart' as _itwfdqvf;
 import '../endpoints/user_endpoint.dart' as _iymy5306;
 import '../greetings/greeting_endpoint.dart' as _il624ik7;
 
@@ -39,10 +40,10 @@ class Endpoints extends _is.EndpointDispatch {
           'jwtRefresh',
           null,
         ),
-      'task': _idmllfay.TaskEndpoint()
+      'order': _itwfdqvf.OrderEndpoint()
         ..initialize(
           server,
-          'task',
+          'order',
           null,
         ),
       'user': _iymy5306.UserEndpoint()
@@ -264,16 +265,16 @@ class Endpoints extends _is.EndpointDispatch {
         ),
       },
     );
-    connectors['task'] = _is.EndpointConnector(
-      name: 'task',
-      endpoint: endpoints['task']!,
+    connectors['order'] = _is.EndpointConnector(
+      name: 'order',
+      endpoint: endpoints['order']!,
       methodConnectors: {
-        'createTask': _is.MethodConnector(
-          name: 'createTask',
+        'createOrder': _is.MethodConnector(
+          name: 'createOrder',
           params: {
-            'task': _is.ParameterDescription(
-              name: 'task',
-              type: _is.getType<_i97zzhd3.Task>(),
+            'request': _is.ParameterDescription(
+              name: 'request',
+              type: _is.getType<_itze2x1b.CreateOrderRequest>(),
               nullable: false,
             ),
           },
@@ -282,21 +283,10 @@ class Endpoints extends _is.EndpointDispatch {
                 _is.Session session,
                 Map<String, dynamic> params,
               ) async =>
-                  (endpoints['task'] as _idmllfay.TaskEndpoint).createTask(
+                  (endpoints['order'] as _itwfdqvf.OrderEndpoint).createOrder(
                     session,
-                    params['task'],
+                    params['request'],
                   ),
-        ),
-        'getTasks': _is.MethodConnector(
-          name: 'getTasks',
-          params: {},
-          call:
-              (
-                _is.Session session,
-                Map<String, dynamic> params,
-              ) async => (endpoints['task'] as _idmllfay.TaskEndpoint).getTasks(
-                session,
-              ),
         ),
       },
     );

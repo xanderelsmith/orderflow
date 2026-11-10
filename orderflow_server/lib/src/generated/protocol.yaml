@@ -9,9 +9,8 @@ emailIdp:
   - hasAccount:
 jwtRefresh:
   - refreshAccessToken:
-task:
-  - createTask:
-  - getTasks:
+order:
+  - createOrder:
 user:
   - createUser:
   - getUsers:

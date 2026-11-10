@@ -12,32 +12,27 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _isc;
 
-abstract class Task
+abstract class CustomerOrder
     implements _isc.SerializableModel, _isc.ProtocolSerialization {
-  Task._({
+  CustomerOrder._({
     this.id,
-    required this.title,
-    required this.isCompleted,
     required this.userId,
+    required this.total,
     required this.createdAt,
   });
 
-  factory Task({
+  factory CustomerOrder({
     int? id,
-    required String title,
-    required bool isCompleted,
-    required int userId,
+    required String userId,
+    required double total,
     required DateTime createdAt,
-  }) = _TaskImpl;
+  }) = _CustomerOrderImpl;
 
-  factory Task.fromJson(Map<String, dynamic> jsonSerialization) {
-    return Task(
+  factory CustomerOrder.fromJson(Map<String, dynamic> jsonSerialization) {
+    return CustomerOrder(
       id: jsonSerialization['id'] as int?,
-      title: jsonSerialization['title'] as String,
-      isCompleted: _isc.BoolJsonExtension.fromJson(
-        jsonSerialization['isCompleted'],
-      ),
-      userId: jsonSerialization['userId'] as int,
+      userId: jsonSerialization['userId'] as String,
+      total: (jsonSerialization['total'] as num).toDouble(),
       createdAt: _isc.DateTimeJsonExtension.fromJson(
         jsonSerialization['createdAt'],
       ),
@@ -49,32 +44,28 @@ abstract class Task
   /// the id will be null.
   int? id;
 
-  String title;
+  String userId;
 
-  bool isCompleted;
-
-  int userId;
+  double total;
 
   DateTime createdAt;
 
-  /// Returns a shallow copy of this [Task]
+  /// Returns a shallow copy of this [CustomerOrder]
   /// with some or all fields replaced by the given arguments.
   @_isc.useResult
-  Task copyWith({
+  CustomerOrder copyWith({
     int? id,
-    String? title,
-    bool? isCompleted,
-    int? userId,
+    String? userId,
+    double? total,
     DateTime? createdAt,
   });
   @override
   Map<String, dynamic> toJson() {
     return {
-      '__className__': 'Task',
+      '__className__': 'CustomerOrder',
       if (id != null) 'id': id,
-      'title': title,
-      'isCompleted': isCompleted,
       'userId': userId,
+      'total': total,
       'createdAt': createdAt.toJson(),
     };
   }
@@ -82,11 +73,10 @@ abstract class Task
   @override
   Map<String, dynamic> toJsonForProtocol() {
     return {
-      '__className__': 'Task',
+      '__className__': 'CustomerOrder',
       if (id != null) 'id': id,
-      'title': title,
-      'isCompleted': isCompleted,
       'userId': userId,
+      'total': total,
       'createdAt': createdAt.toJson(),
     };
   }
@@ -99,37 +89,33 @@ abstract class Task
 
 class _Undefined {}
 
-class _TaskImpl extends Task {
-  _TaskImpl({
+class _CustomerOrderImpl extends CustomerOrder {
+  _CustomerOrderImpl({
     int? id,
-    required String title,
-    required bool isCompleted,
-    required int userId,
+    required String userId,
+    required double total,
     required DateTime createdAt,
   }) : super._(
          id: id,
-         title: title,
-         isCompleted: isCompleted,
          userId: userId,
+         total: total,
          createdAt: createdAt,
        );
 
-  /// Returns a shallow copy of this [Task]
+  /// Returns a shallow copy of this [CustomerOrder]
   /// with some or all fields replaced by the given arguments.
   @_isc.useResult
   @override
-  Task copyWith({
+  CustomerOrder copyWith({
     Object? id = _Undefined,
-    String? title,
-    bool? isCompleted,
-    int? userId,
+    String? userId,
+    double? total,
     DateTime? createdAt,
   }) {
-    return Task(
+    return CustomerOrder(
       id: id is int? ? id : this.id,
-      title: title ?? this.title,
-      isCompleted: isCompleted ?? this.isCompleted,
       userId: userId ?? this.userId,
+      total: total ?? this.total,
       createdAt: createdAt ?? this.createdAt,
     );
   }

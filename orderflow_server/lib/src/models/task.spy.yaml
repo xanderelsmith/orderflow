@@ -1,7 +1,0 @@
-class: Task
-table: tasks
-fields:
-  title: String
-  isCompleted: bool
-  userId: int
-  createdAt: DateTime

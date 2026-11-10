@@ -1,0 +1,3 @@
+exception: EndpointException
+fields:
+  message: String
