@@ -1,0 +1,44 @@
+services:
+  # Development services
+  postgres:
+    image: ghcr.io/serverpod/postgres:16
+    ports:
+      - "8090:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_DB: orderflow
+      POSTGRES_PASSWORD: "jh3FH3Ip8Tnio-WzJtLHwQZGevexjR69"
+    volumes:
+      - orderflow_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:6.2.6
+    ports:
+      - "8091:6379"
+    command: redis-server --requirepass "QWnGJu-XHPBFW4qWnkeMwS20DhSkS4uI"
+    environment:
+      - REDIS_REPLICATION_MODE=master
+
+  # Test services
+  postgres_test:
+    image: ghcr.io/serverpod/postgres:16
+    ports:
+      - "9090:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_DB: orderflow_test
+      POSTGRES_PASSWORD: "VIVP8aYIt2_3UpAeIPxzyk-j_AOAmpjk"
+    volumes:
+      - orderflow_test_data:/var/lib/postgresql/data
+
+  redis_test:
+    image: redis:6.2.6
+    ports:
+      - "9091:6379"
+    command: redis-server --requirepass "2xRLGOD5CcVVq_aAul1VOxd7ma16bIIs"
+    environment:
+      - REDIS_REPLICATION_MODE=master
+
+volumes:
+  orderflow_data:
+  orderflow_test_data:
