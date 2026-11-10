@@ -1,0 +1,5 @@
+class: UserSignedUpEvent
+fields:
+  userId: String
+  email: String
+  signedUpAt: DateTime

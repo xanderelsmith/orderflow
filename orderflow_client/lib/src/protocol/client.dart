@@ -14,10 +14,6 @@ import 'dart:async' as _ida;
 import 'package:http/http.dart' as _i85jenna;
 import 'package:orderflow_client/src/protocol/greetings/greeting.dart'
     as _iwovvxx7;
-import 'package:orderflow_client/src/protocol/modules/billing/api/models/invoice_dto.dart'
-    as _ig7xofje;
-import 'package:orderflow_client/src/protocol/modules/identity/api/models/user_summary.dart'
-    as _i5038041;
 import 'package:serverpod_auth_core_client/serverpod_auth_core_client.dart'
     as _iacc;
 import 'package:serverpod_auth_idp_client/serverpod_auth_idp_client.dart'
@@ -250,6 +246,28 @@ class EndpointJwtRefresh extends _iacc.EndpointRefreshJwtTokens {
       );
 }
 
+/// {@category Endpoint}
+class EndpointCheckout extends _isc.EndpointRef {
+  EndpointCheckout(_isc.EndpointCaller caller) : super(caller);
+
+  @override
+  String get name => 'checkout';
+
+  _ida.Future<void> completeCheckout(
+    int orderId,
+    String email,
+    double amount,
+  ) => caller.callServerEndpoint<void>(
+    'checkout',
+    'completeCheckout',
+    {
+      'orderId': orderId,
+      'email': email,
+      'amount': amount,
+    },
+  );
+}
+
 /// This is an example endpoint that returns a greeting message through
 /// its [hello] method.
 /// {@category Endpoint}
@@ -265,55 +283,6 @@ class EndpointGreeting extends _isc.EndpointRef {
         'greeting',
         'hello',
         {'name': name},
-      );
-}
-
-/// {@category Endpoint}
-class EndpointBilling extends _isc.EndpointRef {
-  EndpointBilling(_isc.EndpointCaller caller) : super(caller);
-
-  @override
-  String get name => 'billing';
-
-  _ida.Future<_ig7xofje.InvoiceDto> issueInvoice(
-    int userId,
-    double amount,
-  ) => caller.callServerEndpoint<_ig7xofje.InvoiceDto>(
-    'billing',
-    'issueInvoice',
-    {
-      'userId': userId,
-      'amount': amount,
-    },
-  );
-}
-
-/// {@category Endpoint}
-class EndpointIdentity extends _isc.EndpointRef {
-  EndpointIdentity(_isc.EndpointCaller caller) : super(caller);
-
-  @override
-  String get name => 'identity';
-
-  _ida.Future<_i5038041.UserSummary> registerAccount(
-    String email,
-    String firstName,
-    String lastName,
-  ) => caller.callServerEndpoint<_i5038041.UserSummary>(
-    'identity',
-    'registerAccount',
-    {
-      'email': email,
-      'firstName': firstName,
-      'lastName': lastName,
-    },
-  );
-
-  _ida.Future<_i5038041.UserSummary?> getUserSummary(int userId) =>
-      caller.callServerEndpoint<_i5038041.UserSummary?>(
-        'identity',
-        'getUserSummary',
-        {'userId': userId},
       );
 }
 
@@ -357,9 +326,8 @@ class Client extends _isc.ServerpodClientShared {
        ) {
     emailIdp = EndpointEmailIdp(this);
     jwtRefresh = EndpointJwtRefresh(this);
+    checkout = EndpointCheckout(this);
     greeting = EndpointGreeting(this);
-    billing = EndpointBilling(this);
-    identity = EndpointIdentity(this);
     modules = Modules(this);
   }
 
@@ -367,11 +335,9 @@ class Client extends _isc.ServerpodClientShared {
 
   late final EndpointJwtRefresh jwtRefresh;
 
+  late final EndpointCheckout checkout;
+
   late final EndpointGreeting greeting;
-
-  late final EndpointBilling billing;
-
-  late final EndpointIdentity identity;
 
   late final Modules modules;
 
@@ -379,9 +345,8 @@ class Client extends _isc.ServerpodClientShared {
   Map<String, _isc.EndpointRef> get endpointRefLookup => {
     'emailIdp': emailIdp,
     'jwtRefresh': jwtRefresh,
+    'checkout': checkout,
     'greeting': greeting,
-    'billing': billing,
-    'identity': identity,
   };
 
   @override

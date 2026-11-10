@@ -10,6 +10,7 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
+import 'package:orderflow_server/src/generated/future_calls.dart' as _i7o2srlm;
 import 'package:serverpod/serverpod.dart' as _is;
 import 'package:serverpod_auth_core_server/serverpod_auth_core_server.dart'
     as _iacs;
@@ -17,9 +18,9 @@ import 'package:serverpod_auth_idp_server/serverpod_auth_idp_server.dart'
     as _iais;
 import '../auth/email_idp_endpoint.dart' as _iuc1hd5t;
 import '../auth/jwt_refresh_endpoint.dart' as _inwq3ztq;
+import '../endpoints/checkout_endpoint.dart' as _i1bavh57;
 import '../greetings/greeting_endpoint.dart' as _il624ik7;
-import '../modules/billing/internal/billing_endpoint.dart' as _iw530gql;
-import '../modules/identity/internal/identity_endpoint.dart' as _ihw3nnfr;
+export 'future_calls.dart' show ServerpodFutureCallsGetter;
 
 class Endpoints extends _is.EndpointDispatch {
   @override
@@ -37,22 +38,16 @@ class Endpoints extends _is.EndpointDispatch {
           'jwtRefresh',
           null,
         ),
+      'checkout': _i1bavh57.CheckoutEndpoint()
+        ..initialize(
+          server,
+          'checkout',
+          null,
+        ),
       'greeting': _il624ik7.GreetingEndpoint()
         ..initialize(
           server,
           'greeting',
-          null,
-        ),
-      'billing': _iw530gql.BillingEndpoint()
-        ..initialize(
-          server,
-          'billing',
-          null,
-        ),
-      'identity': _ihw3nnfr.IdentityEndpoint()
-        ..initialize(
-          server,
-          'identity',
           null,
         ),
     };
@@ -262,6 +257,43 @@ class Endpoints extends _is.EndpointDispatch {
         ),
       },
     );
+    connectors['checkout'] = _is.EndpointConnector(
+      name: 'checkout',
+      endpoint: endpoints['checkout']!,
+      methodConnectors: {
+        'completeCheckout': _is.MethodConnector(
+          name: 'completeCheckout',
+          params: {
+            'orderId': _is.ParameterDescription(
+              name: 'orderId',
+              type: _is.getType<int>(),
+              nullable: false,
+            ),
+            'email': _is.ParameterDescription(
+              name: 'email',
+              type: _is.getType<String>(),
+              nullable: false,
+            ),
+            'amount': _is.ParameterDescription(
+              name: 'amount',
+              type: _is.getType<double>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['checkout'] as _i1bavh57.CheckoutEndpoint)
+                  .completeCheckout(
+                    session,
+                    params['orderId'],
+                    params['email'],
+                    params['amount'],
+                  ),
+        ),
+      },
+    );
     connectors['greeting'] = _is.EndpointConnector(
       name: 'greeting',
       endpoint: endpoints['greeting']!,
@@ -287,96 +319,14 @@ class Endpoints extends _is.EndpointDispatch {
         ),
       },
     );
-    connectors['billing'] = _is.EndpointConnector(
-      name: 'billing',
-      endpoint: endpoints['billing']!,
-      methodConnectors: {
-        'issueInvoice': _is.MethodConnector(
-          name: 'issueInvoice',
-          params: {
-            'userId': _is.ParameterDescription(
-              name: 'userId',
-              type: _is.getType<int>(),
-              nullable: false,
-            ),
-            'amount': _is.ParameterDescription(
-              name: 'amount',
-              type: _is.getType<double>(),
-              nullable: false,
-            ),
-          },
-          call:
-              (
-                _is.Session session,
-                Map<String, dynamic> params,
-              ) async => (endpoints['billing'] as _iw530gql.BillingEndpoint)
-                  .issueInvoice(
-                    session,
-                    params['userId'],
-                    params['amount'],
-                  ),
-        ),
-      },
-    );
-    connectors['identity'] = _is.EndpointConnector(
-      name: 'identity',
-      endpoint: endpoints['identity']!,
-      methodConnectors: {
-        'registerAccount': _is.MethodConnector(
-          name: 'registerAccount',
-          params: {
-            'email': _is.ParameterDescription(
-              name: 'email',
-              type: _is.getType<String>(),
-              nullable: false,
-            ),
-            'firstName': _is.ParameterDescription(
-              name: 'firstName',
-              type: _is.getType<String>(),
-              nullable: false,
-            ),
-            'lastName': _is.ParameterDescription(
-              name: 'lastName',
-              type: _is.getType<String>(),
-              nullable: false,
-            ),
-          },
-          call:
-              (
-                _is.Session session,
-                Map<String, dynamic> params,
-              ) async => (endpoints['identity'] as _ihw3nnfr.IdentityEndpoint)
-                  .registerAccount(
-                    session,
-                    params['email'],
-                    params['firstName'],
-                    params['lastName'],
-                  ),
-        ),
-        'getUserSummary': _is.MethodConnector(
-          name: 'getUserSummary',
-          params: {
-            'userId': _is.ParameterDescription(
-              name: 'userId',
-              type: _is.getType<int>(),
-              nullable: false,
-            ),
-          },
-          call:
-              (
-                _is.Session session,
-                Map<String, dynamic> params,
-              ) async => (endpoints['identity'] as _ihw3nnfr.IdentityEndpoint)
-                  .getUserSummary(
-                    session,
-                    params['userId'],
-                  ),
-        ),
-      },
-    );
     modules['serverpod_auth_idp'] = _iais.Endpoints()
       ..initializeEndpoints(server);
     modules['serverpod_auth_core'] = _iacs.Endpoints()
       ..initializeEndpoints(server);
+  }
+
+  @override
+  _is.FutureCallDispatch? get futureCalls {
+    return _i7o2srlm.FutureCalls();
   }
 }

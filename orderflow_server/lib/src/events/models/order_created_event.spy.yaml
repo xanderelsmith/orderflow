@@ -1,0 +1,5 @@
+class: OrderCreatedEvent
+fields:
+  orderId: int
+  userEmail: String
+  totalAmount: double

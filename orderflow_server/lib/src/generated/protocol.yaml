@@ -9,10 +9,7 @@ emailIdp:
   - hasAccount:
 jwtRefresh:
   - refreshAccessToken:
+checkout:
+  - completeCheckout:
 greeting:
   - hello:
-billing:
-  - issueInvoice:
-identity:
-  - registerAccount:
-  - getUserSummary:

@@ -1,9 +1,0 @@
-# PRIVATE TO IDENTITY - Other modules CANNOT touch this
-class: UserAccount
-table: user_account
-fields:
-  email: String
-  hashedPassword: String
-  firstName: String
-  lastName: String
-  isActive: bool
