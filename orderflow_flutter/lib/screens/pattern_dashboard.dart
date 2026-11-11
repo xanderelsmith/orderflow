@@ -1,60 +1,17 @@
 import 'package:flutter/material.dart';
 
 import '../client.dart';
-import '../widgets/product_shell.dart';
-
-class _CatalogItem {
-  final String sku;
-  final String name;
-  final double price;
-  final IconData icon;
-
-  const _CatalogItem({
-    required this.sku,
-    required this.name,
-    required this.price,
-    required this.icon,
-  });
-}
-
-const _catalog = [
-  _CatalogItem(
-    sku: 'ROAST-01',
-    name: 'Ethiopia Single Origin',
-    price: 18.50,
-    icon: Icons.coffee,
-  ),
-  _CatalogItem(
-    sku: 'GEAR-02',
-    name: 'Pour-Over Glass Dripper',
-    price: 34.00,
-    icon: Icons.local_cafe_outlined,
-  ),
-  _CatalogItem(
-    sku: 'SCALE-03',
-    name: 'Precision Brew Scale',
-    price: 59.00,
-    icon: Icons.scale_outlined,
-  ),
-  _CatalogItem(
-    sku: 'PACK-04',
-    name: 'Explorer Starter Kit',
-    price: 45.00,
-    icon: Icons.inventory_2_outlined,
-  ),
-];
+import '../widgets/ecommerce_shell.dart';
 
 class _DispatchedOrder {
   final int orderId;
   final String email;
   final double amount;
-  final DateTime dispatchedAt;
 
   _DispatchedOrder({
     required this.orderId,
     required this.email,
     required this.amount,
-    required this.dispatchedAt,
   });
 }
 
@@ -66,9 +23,9 @@ class PatternDashboard extends StatefulWidget {
 }
 
 class _PatternDashboardState extends State<PatternDashboard> {
-  final _activity = <ActivityLogItem>[];
-  final Map<String, int> _cart = {'PACK-04': 1};
-  final List<_DispatchedOrder> _dispatched = [];
+  final _activity = ValueNotifier<List<ActivityLogItem>>([]);
+  final Map<String, int> _cart = {'SCALE-03': 1};
+  final List<_DispatchedOrder> _orders = [];
 
   final _emailController = TextEditingController(text: 'explorer@example.com');
   int _nextOrderId = 1001;
@@ -76,34 +33,38 @@ class _PatternDashboardState extends State<PatternDashboard> {
 
   @override
   void dispose() {
+    _activity.dispose();
     _emailController.dispose();
     super.dispose();
   }
 
-  void _log(String action, Object? detail, {bool isError = false}) {
-    if (!mounted) return;
-    setState(() {
-      _activity.insert(
-        0,
-        ActivityLogItem(
-          timestamp: DateTime.now(),
-          action: action,
-          isError: isError,
-          detail: isError ? '$detail' : prettyPayload(detail),
-        ),
-      );
-    });
-  }
-
-  double get _cartTotal {
-    var total = 0.0;
-    for (final item in _catalog) {
-      total += (_cart[item.sku] ?? 0) * item.price;
-    }
-    return total;
+  void _log(
+    String action,
+    String summary,
+    Object? detail, {
+    bool isError = false,
+  }) {
+    _activity.value = [
+      ActivityLogItem(
+        timestamp: DateTime.now(),
+        action: action,
+        summary: summary,
+        isError: isError,
+        detail: isError ? '$detail' : prettyPayload(detail),
+      ),
+      ..._activity.value,
+    ];
   }
 
   int get _cartCount => _cart.values.fold(0, (a, b) => a + b);
+
+  double get _cartTotal {
+    var total = 0.0;
+    for (final p in shopCatalog) {
+      total += (_cart[p.sku] ?? 0) * p.price;
+    }
+    return total;
+  }
 
   void _adjustQty(String sku, int delta) {
     setState(() {
@@ -116,7 +77,7 @@ class _PatternDashboardState extends State<PatternDashboard> {
     });
   }
 
-  Future<void> _completeCheckout() async {
+  Future<void> _checkout() async {
     final email = _emailController.text.trim();
     final total = _cartTotal;
     if (email.isEmpty || total <= 0) return;
@@ -127,31 +88,31 @@ class _PatternDashboardState extends State<PatternDashboard> {
       await client.checkout.completeCheckout(orderId, email, total);
       setState(() {
         _nextOrderId++;
-        _dispatched.insert(
+        _orders.insert(
           0,
-          _DispatchedOrder(
-            orderId: orderId,
-            email: email,
-            amount: total,
-            dispatchedAt: DateTime.now(),
-          ),
+          _DispatchedOrder(orderId: orderId, email: email, amount: total),
         );
         _cart.clear();
       });
-      _log('checkout.completeCheckout', {
-        'orderId': orderId,
-        'email': email,
-        'amount': total,
-        'messageBusChannel': 'order_channel',
-        'futureCall': 'SendEmailCall.sendReceipt (1s delay)',
-      });
-    } catch (e) {
-      _log('checkout.completeCheckout', e, isError: true);
+      _log(
+        'checkout.completeCheckout',
+        'Dispatched Order #$orderId (\$${total.toStringAsFixed(2)}) for $email',
+        {
+          'orderId': orderId,
+          'email': email,
+          'amount': total,
+          'pubSubChannel': 'order_channel',
+          'futureCall': 'SendEmailCall.sendReceipt (1s delay)',
+        },
+      );
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Dispatch failed: $e')),
+          SnackBar(content: Text('Order #$orderId dispatched!')),
         );
       }
+    } catch (e) {
+      _log('checkout.completeCheckout', 'Checkout dispatch failed', e,
+          isError: true);
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -159,12 +120,15 @@ class _PatternDashboardState extends State<PatternDashboard> {
 
   @override
   Widget build(BuildContext context) {
-    return ProductShell(
-      editionLabel: 'Async Checkout · Event-Driven',
-      subtitle:
-          'Instant storefront checkout: responds immediately while broadcasting OrderCreatedEvent on order_channel and queuing SendEmailCall in the background.',
-      activity: _activity,
-      onClearActivity: () => setState(_activity.clear),
+    return EcommerceShell(
+      patternBadge: '05 · Event-Driven',
+      architectureTitle: 'Pattern 5: Event-Driven Architecture',
+      architectureFlow:
+          'CheckoutEndpoint → CheckoutService → MessageCentral (order_channel) + SendEmailCall FutureCall',
+      architectureTradeoff:
+          'Instant client responses and resilient background jobs. Requires handling idempotency and eventual consistency.',
+      activityNotifier: _activity,
+      onClearActivity: () => _activity.value = [],
       onLog: _log,
       child: LayoutBuilder(
         builder: (context, constraints) {
@@ -172,12 +136,14 @@ class _PatternDashboardState extends State<PatternDashboard> {
           final left = Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _buildCatalogCard(context),
-              const SizedBox(height: 20),
-              _buildDispatchFeed(context),
+              _buildCatalog(context),
+              if (_orders.isNotEmpty) ...[
+                const SizedBox(height: 20),
+                _buildOrderReceipts(context),
+              ],
             ],
           );
-          final right = _buildInstantCheckoutCard(context);
+          final right = _buildCartCard(context);
           if (twoCol) {
             return Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -201,7 +167,7 @@ class _PatternDashboardState extends State<PatternDashboard> {
     );
   }
 
-  Widget _buildCatalogCard(BuildContext context) {
+  Widget _buildCatalog(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     return Card(
       child: Padding(
@@ -210,9 +176,9 @@ class _PatternDashboardState extends State<PatternDashboard> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Storefront Catalog',
+              'Shop Coffee & Gear',
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w700,
                   ),
             ),
             const SizedBox(height: 14),
@@ -220,7 +186,7 @@ class _PatternDashboardState extends State<PatternDashboard> {
               spacing: 12,
               runSpacing: 12,
               children: [
-                for (final item in _catalog)
+                for (final p in shopCatalog)
                   SizedBox(
                     width: 270,
                     child: Card.outlined(
@@ -234,13 +200,13 @@ class _PatternDashboardState extends State<PatternDashboard> {
                                 CircleAvatar(
                                   backgroundColor: colors.primaryContainer,
                                   child: Icon(
-                                    item.icon,
+                                    p.icon,
                                     color: colors.onPrimaryContainer,
                                   ),
                                 ),
                                 const Spacer(),
                                 Text(
-                                  '\$${item.price.toStringAsFixed(2)}',
+                                  '\$${p.price.toStringAsFixed(2)}',
                                   style: Theme.of(context)
                                       .textTheme
                                       .titleMedium
@@ -248,31 +214,37 @@ class _PatternDashboardState extends State<PatternDashboard> {
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 10),
+                            const SizedBox(height: 12),
                             Text(
-                              item.name,
+                              p.name,
                               style:
                                   const TextStyle(fontWeight: FontWeight.w600),
                             ),
-                            const SizedBox(height: 10),
+                            Text(
+                              p.subtitle,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodySmall
+                                  ?.copyWith(color: colors.onSurfaceVariant),
+                            ),
+                            const SizedBox(height: 12),
                             Row(
                               children: [
                                 IconButton.outlined(
                                   visualDensity: VisualDensity.compact,
-                                  onPressed: (_cart[item.sku] ?? 0) > 0
-                                      ? () => _adjustQty(item.sku, -1)
+                                  onPressed: (_cart[p.sku] ?? 0) > 0
+                                      ? () => _adjustQty(p.sku, -1)
                                       : null,
                                   icon: const Icon(Icons.remove, size: 16),
                                 ),
                                 Padding(
                                   padding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                  ),
-                                  child: Text('${_cart[item.sku] ?? 0}'),
+                                      horizontal: 12),
+                                  child: Text('${_cart[p.sku] ?? 0}'),
                                 ),
                                 IconButton.filledTonal(
                                   visualDensity: VisualDensity.compact,
-                                  onPressed: () => _adjustQty(item.sku, 1),
+                                  onPressed: () => _adjustQty(p.sku, 1),
                                   icon: const Icon(Icons.add, size: 16),
                                 ),
                               ],
@@ -290,18 +262,24 @@ class _PatternDashboardState extends State<PatternDashboard> {
     );
   }
 
-  Widget _buildInstantCheckoutCard(BuildContext context) {
+  Widget _buildCartCard(BuildContext context) {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Express Async Checkout',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
+            Row(
+              children: [
+                Text(
+                  'Express Checkout',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                ),
+                const Spacer(),
+                Text('$_cartCount item(s)'),
+              ],
             ),
             const SizedBox(height: 12),
             TextField(
@@ -312,11 +290,11 @@ class _PatternDashboardState extends State<PatternDashboard> {
                 isDense: true,
               ),
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: 12),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('$_cartCount item(s) · Next Order #$_nextOrderId'),
+                const Text('Total'),
                 Text(
                   '\$${_cartTotal.toStringAsFixed(2)}',
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
@@ -329,7 +307,7 @@ class _PatternDashboardState extends State<PatternDashboard> {
             SizedBox(
               width: double.infinity,
               child: FilledButton.icon(
-                onPressed: (_busy || _cartTotal <= 0) ? null : _completeCheckout,
+                onPressed: (_busy || _cartCount <= 0) ? null : _checkout,
                 icon: const Icon(Icons.bolt, size: 18),
                 label: const Text('Complete Checkout'),
               ),
@@ -340,7 +318,7 @@ class _PatternDashboardState extends State<PatternDashboard> {
     );
   }
 
-  Widget _buildDispatchFeed(BuildContext context) {
+  Widget _buildOrderReceipts(BuildContext context) {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(20),
@@ -348,39 +326,25 @@ class _PatternDashboardState extends State<PatternDashboard> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Dispatched Event Pipeline',
+              'Recent Orders',
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w700,
                   ),
             ),
             const Divider(height: 20),
-            if (_dispatched.isEmpty)
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 20),
-                child: Center(
-                  child: Text(
-                    'Complete a checkout to publish OrderCreatedEvent and queue SendEmailCall.',
-                  ),
+            for (final o in _orders)
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.bolt, color: Colors.amber),
+                title: Text(
+                  'Order #${o.orderId} · \$${o.amount.toStringAsFixed(2)}',
                 ),
-              )
-            else
-              for (final item in _dispatched) ...[
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: const Icon(Icons.bolt, color: Colors.amber),
-                  title: Text(
-                    'Order #${item.orderId} · \$${item.amount.toStringAsFixed(2)}',
-                  ),
-                  subtitle: Text(
-                    'Receipt queued for ${item.email} · Broadcast on order_channel',
-                  ),
-                  trailing: const Chip(
-                    label: Text('Queued'),
-                    visualDensity: VisualDensity.compact,
-                  ),
+                subtitle: Text('Receipt emailing to ${o.email}'),
+                trailing: const Chip(
+                  label: Text('Dispatched'),
+                  visualDensity: VisualDensity.compact,
                 ),
-                const Divider(height: 1),
-              ],
+              ),
           ],
         ),
       ),
