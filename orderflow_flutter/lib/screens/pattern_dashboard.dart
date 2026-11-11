@@ -2,21 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:orderflow_client/orderflow_client.dart';
 
 import '../client.dart';
-import '../widgets/product_shell.dart';
-
-class _PlanOption {
-  final String name;
-  final String subtitle;
-  final double price;
-
-  const _PlanOption(this.name, this.subtitle, this.price);
-}
-
-const _plans = [
-  _PlanOption('Starter Retainer', 'Monthly Coffee Subscription', 49.00),
-  _PlanOption('Studio Supply', 'Office Beans + Filters Pack', 149.00),
-  _PlanOption('Enterprise Batch', 'Wholesale Roaster Lot', 499.00),
-];
+import '../widgets/ecommerce_shell.dart';
 
 class PatternDashboard extends StatefulWidget {
   const PatternDashboard({super.key});
@@ -26,7 +12,8 @@ class PatternDashboard extends StatefulWidget {
 }
 
 class _PatternDashboardState extends State<PatternDashboard> {
-  final _activity = <ActivityLogItem>[];
+  final _activity = ValueNotifier<List<ActivityLogItem>>([]);
+  final Map<String, int> _cart = {'PACK-04': 1};
 
   final _emailController = TextEditingController();
   final _firstNameController = TextEditingController();
@@ -34,12 +21,12 @@ class _PatternDashboardState extends State<PatternDashboard> {
   final _lookupIdController = TextEditingController(text: '1');
 
   UserSummary? _activeAccount;
-  _PlanOption _selectedPlan = _plans[1];
-  final List<InvoiceDto> _issuedInvoices = [];
+  final List<InvoiceDto> _invoices = [];
   bool _busy = false;
 
   @override
   void dispose() {
+    _activity.dispose();
     _emailController.dispose();
     _firstNameController.dispose();
     _lastNameController.dispose();
@@ -47,18 +34,42 @@ class _PatternDashboardState extends State<PatternDashboard> {
     super.dispose();
   }
 
-  void _log(String action, Object? detail, {bool isError = false}) {
-    if (!mounted) return;
+  void _log(
+    String action,
+    String summary,
+    Object? detail, {
+    bool isError = false,
+  }) {
+    _activity.value = [
+      ActivityLogItem(
+        timestamp: DateTime.now(),
+        action: action,
+        summary: summary,
+        isError: isError,
+        detail: isError ? '$detail' : prettyPayload(detail),
+      ),
+      ..._activity.value,
+    ];
+  }
+
+  int get _cartCount => _cart.values.fold(0, (a, b) => a + b);
+
+  double get _cartTotal {
+    var total = 0.0;
+    for (final p in shopCatalog) {
+      total += (_cart[p.sku] ?? 0) * p.price;
+    }
+    return total;
+  }
+
+  void _adjustQty(String sku, int delta) {
     setState(() {
-      _activity.insert(
-        0,
-        ActivityLogItem(
-          timestamp: DateTime.now(),
-          action: action,
-          isError: isError,
-          detail: isError ? '$detail' : prettyPayload(detail),
-        ),
-      );
+      final next = (_cart[sku] ?? 0) + delta;
+      if (next <= 0) {
+        _cart.remove(sku);
+      } else {
+        _cart[sku] = next;
+      }
     });
   }
 
@@ -77,9 +88,14 @@ class _PatternDashboardState extends State<PatternDashboard> {
       _emailController.clear();
       _firstNameController.clear();
       _lastNameController.clear();
-      _log('identity.registerAccount', summary.toJson());
+      _log(
+        'identity.registerAccount',
+        'Provisioned account #${summary.userId} (${summary.fullName})',
+        summary.toJson(),
+      );
     } catch (e) {
-      _log('identity.registerAccount', e, isError: true);
+      _log('identity.registerAccount', 'Account creation failed', e,
+          isError: true);
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -92,28 +108,41 @@ class _PatternDashboardState extends State<PatternDashboard> {
     try {
       final summary = await client.identity.getUserSummary(id);
       setState(() => _activeAccount = summary);
-      _log('identity.getUserSummary', summary?.toJson());
+      _log(
+        'identity.getUserSummary',
+        summary != null
+            ? 'Loaded UserSummary for ${summary.fullName}'
+            : 'No account #$id',
+        summary?.toJson(),
+      );
     } catch (e) {
-      _log('identity.getUserSummary', e, isError: true);
+      _log('identity.getUserSummary', 'Lookup failed', e, isError: true);
     } finally {
       if (mounted) setState(() => _busy = false);
     }
   }
 
-  Future<void> _issueInvoice() async {
+  Future<void> _checkoutAndInvoice() async {
     final userId =
         _activeAccount?.userId ?? int.tryParse(_lookupIdController.text.trim());
-    if (userId == null) return;
+    final total = _cartTotal;
+    if (userId == null || total <= 0) return;
+
     setState(() => _busy = true);
     try {
-      final invoice = await client.billing.issueInvoice(
-        userId,
-        _selectedPlan.price,
+      final invoice = await client.billing.issueInvoice(userId, total);
+      setState(() {
+        _invoices.insert(0, invoice);
+        _cart.clear();
+      });
+      _log(
+        'billing.issueInvoice',
+        'Issued invoice #${invoice.ledgerEntryId} for Account #$userId (\$${invoice.amount.toStringAsFixed(2)})',
+        invoice.toJson(),
       );
-      setState(() => _issuedInvoices.insert(0, invoice));
-      _log('billing.issueInvoice', invoice.toJson());
     } catch (e) {
-      _log('billing.issueInvoice', e, isError: true);
+      _log('billing.issueInvoice', 'Invoice checkout rejected', e,
+          isError: true);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Invoice rejected: $e')),
@@ -126,18 +155,37 @@ class _PatternDashboardState extends State<PatternDashboard> {
 
   @override
   Widget build(BuildContext context) {
-    return ProductShell(
-      editionLabel: 'Enterprise · Modular Monolith',
-      subtitle:
-          'Account provisioning & invoicing across isolated modules: Billing validates accounts strictly through IdentityFacade and returns InvoiceDto.',
-      activity: _activity,
-      onClearActivity: () => setState(_activity.clear),
+    return EcommerceShell(
+      patternBadge: '04 · Modular Monolith',
+      architectureTitle: 'Pattern 4: Modular Monolith (Tier 2)',
+      architectureFlow:
+          'BillingEndpoint → BillingService → IdentityFacade → IdentityService',
+      architectureTradeoff:
+          'Strict api/ vs internal/ module boundaries without microservices overhead. Requires import discipline.',
+      activityNotifier: _activity,
+      onClearActivity: () => _activity.value = [],
       onLog: _log,
       child: LayoutBuilder(
         builder: (context, constraints) {
           final twoCol = constraints.maxWidth >= 860;
-          final left = _buildBillingDesk(context);
-          final right = _buildIdentityDesk(context);
+          final left = Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _buildCatalog(context),
+              if (_invoices.isNotEmpty) ...[
+                const SizedBox(height: 20),
+                _buildInvoicesCard(context),
+              ],
+            ],
+          );
+          final right = Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _buildCartCard(context),
+              const SizedBox(height: 20),
+              _buildIdentityCard(context),
+            ],
+          );
           if (twoCol) {
             return Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -161,7 +209,7 @@ class _PatternDashboardState extends State<PatternDashboard> {
     );
   }
 
-  Widget _buildBillingDesk(BuildContext context) {
+  Widget _buildCatalog(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     return Card(
       child: Padding(
@@ -170,9 +218,9 @@ class _PatternDashboardState extends State<PatternDashboard> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Select Supply Plan & Issue Invoice',
+              'Shop Coffee & Gear',
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w700,
                   ),
             ),
             const SizedBox(height: 14),
@@ -180,46 +228,68 @@ class _PatternDashboardState extends State<PatternDashboard> {
               spacing: 12,
               runSpacing: 12,
               children: [
-                for (final plan in _plans)
+                for (final p in shopCatalog)
                   SizedBox(
-                    width: 210,
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(12),
-                      onTap: () => setState(() => _selectedPlan = plan),
-                      child: Container(
+                    width: 270,
+                    child: Card.outlined(
+                      child: Padding(
                         padding: const EdgeInsets.all(14),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(12),
-                          color: _selectedPlan == plan
-                              ? colors.primaryContainer.withValues(alpha: 0.5)
-                              : null,
-                          border: Border.all(
-                            color: _selectedPlan == plan
-                                ? colors.primary
-                                : colors.outlineVariant,
-                            width: _selectedPlan == plan ? 2 : 1,
-                          ),
-                        ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            Row(
+                              children: [
+                                CircleAvatar(
+                                  backgroundColor: colors.primaryContainer,
+                                  child: Icon(
+                                    p.icon,
+                                    color: colors.onPrimaryContainer,
+                                  ),
+                                ),
+                                const Spacer(),
+                                Text(
+                                  '\$${p.price.toStringAsFixed(2)}',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .titleMedium
+                                      ?.copyWith(fontWeight: FontWeight.w700),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
                             Text(
-                              plan.name,
+                              p.name,
                               style:
-                                  const TextStyle(fontWeight: FontWeight.w700),
+                                  const TextStyle(fontWeight: FontWeight.w600),
                             ),
-                            const SizedBox(height: 4),
                             Text(
-                              plan.subtitle,
-                              style: Theme.of(context).textTheme.bodySmall,
-                            ),
-                            const SizedBox(height: 10),
-                            Text(
-                              '\$${plan.price.toStringAsFixed(2)}',
+                              p.subtitle,
                               style: Theme.of(context)
                                   .textTheme
-                                  .titleLarge
-                                  ?.copyWith(fontWeight: FontWeight.w700),
+                                  .bodySmall
+                                  ?.copyWith(color: colors.onSurfaceVariant),
+                            ),
+                            const SizedBox(height: 12),
+                            Row(
+                              children: [
+                                IconButton.outlined(
+                                  visualDensity: VisualDensity.compact,
+                                  onPressed: (_cart[p.sku] ?? 0) > 0
+                                      ? () => _adjustQty(p.sku, -1)
+                                      : null,
+                                  icon: const Icon(Icons.remove, size: 16),
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 12),
+                                  child: Text('${_cart[p.sku] ?? 0}'),
+                                ),
+                                IconButton.filledTonal(
+                                  visualDensity: VisualDensity.compact,
+                                  onPressed: () => _adjustQty(p.sku, 1),
+                                  icon: const Icon(Icons.add, size: 16),
+                                ),
+                              ],
                             ),
                           ],
                         ),
@@ -228,58 +298,13 @@ class _PatternDashboardState extends State<PatternDashboard> {
                   ),
               ],
             ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    _activeAccount != null
-                        ? 'Billed to: ${_activeAccount!.fullName} (#${_activeAccount!.userId})'
-                        : 'Select or register an Identity account on the right (or use ID #${_lookupIdController.text}).',
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                FilledButton.icon(
-                  onPressed: _busy ? null : _issueInvoice,
-                  icon: const Icon(Icons.receipt_outlined, size: 18),
-                  label: Text(
-                    'Issue \$${_selectedPlan.price.toStringAsFixed(0)} Invoice',
-                  ),
-                ),
-              ],
-            ),
-            if (_issuedInvoices.isNotEmpty) ...[
-              const SizedBox(height: 20),
-              const Divider(height: 1),
-              const SizedBox(height: 14),
-              Text(
-                'Issued Ledger Invoices',
-                style: Theme.of(context).textTheme.titleSmall,
-              ),
-              const SizedBox(height: 8),
-              for (final inv in _issuedInvoices)
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: const Icon(Icons.verified_outlined,
-                      color: Colors.green),
-                  title: Text(
-                    'Invoice #${inv.ledgerEntryId} · Account #${inv.userId}',
-                  ),
-                  subtitle: Text('Issued ${inv.issuedAt.toLocal()}'),
-                  trailing: Text(
-                    '\$${inv.amount.toStringAsFixed(2)}',
-                    style: const TextStyle(fontWeight: FontWeight.w700),
-                  ),
-                ),
-            ],
           ],
         ),
       ),
     );
   }
 
-  Widget _buildIdentityDesk(BuildContext context) {
+  Widget _buildInvoicesCard(BuildContext context) {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(20),
@@ -287,12 +312,101 @@ class _PatternDashboardState extends State<PatternDashboard> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Identity Accounts',
+              'Issued Invoices',
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w700,
                   ),
             ),
+            const Divider(height: 20),
+            for (final inv in _invoices)
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading:
+                    const Icon(Icons.verified_outlined, color: Colors.green),
+                title: Text(
+                  'Invoice #${inv.ledgerEntryId} · Account #${inv.userId}',
+                ),
+                subtitle: Text('Issued ${inv.issuedAt.toLocal()}'),
+                trailing: Text(
+                  '\$${inv.amount.toStringAsFixed(2)}',
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCartCard(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Text(
+                  'Cart & Invoice Checkout',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                ),
+                const Spacer(),
+                Text('$_cartCount item(s)'),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Text(
+              _activeAccount != null
+                  ? 'Billed to ${_activeAccount!.fullName} (#${_activeAccount!.userId})'
+                  : 'Create or load a customer account below (or uses #${_lookupIdController.text}).',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
             const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('Total'),
+                Text(
+                  '\$${_cartTotal.toStringAsFixed(2)}',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed:
+                    (_busy || _cartCount <= 0) ? null : _checkoutAndInvoice,
+                icon: const Icon(Icons.receipt_outlined, size: 18),
+                label: const Text('Checkout & Issue Invoice'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildIdentityCard(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Customer Identity Account',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+            ),
+            const SizedBox(height: 10),
             Row(
               children: [
                 Expanded(
@@ -307,43 +421,27 @@ class _PatternDashboardState extends State<PatternDashboard> {
                   ),
                 ),
                 const SizedBox(width: 8),
-                OutlinedButton.icon(
+                OutlinedButton(
                   onPressed: _busy ? null : _lookupAccount,
-                  icon: const Icon(Icons.search, size: 18),
-                  label: const Text('Load'),
+                  child: const Text('Load'),
                 ),
               ],
             ),
             if (_activeAccount != null) ...[
-              const SizedBox(height: 12),
-              Card.outlined(
-                child: ListTile(
-                  leading: CircleAvatar(
-                    child: Text(
-                      _activeAccount!.fullName.isEmpty
-                          ? '?'
-                          : _activeAccount!.fullName[0].toUpperCase(),
-                    ),
-                  ),
-                  title: Text(_activeAccount!.fullName),
-                  subtitle: Text(_activeAccount!.email),
-                  trailing: Chip(
-                    label: Text(
-                      _activeAccount!.isActive ? 'Active' : 'Inactive',
-                    ),
-                    visualDensity: VisualDensity.compact,
-                  ),
+              const SizedBox(height: 10),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                dense: true,
+                leading: const Icon(Icons.person_outline),
+                title: Text(_activeAccount!.fullName),
+                subtitle: Text(_activeAccount!.email),
+                trailing: Chip(
+                  label: Text(_activeAccount!.isActive ? 'Active' : 'Inactive'),
+                  visualDensity: VisualDensity.compact,
                 ),
               ),
             ],
-            const SizedBox(height: 16),
-            const Divider(height: 1),
-            const SizedBox(height: 14),
-            Text(
-              'Provision New Account',
-              style: Theme.of(context).textTheme.titleSmall,
-            ),
-            const SizedBox(height: 10),
+            const Divider(height: 24),
             TextField(
               controller: _emailController,
               decoration: const InputDecoration(
