@@ -1,8 +1,50 @@
 import 'package:flutter/material.dart';
 import 'package:orderflow_client/orderflow_client.dart';
+import 'package:serverpod_auth_idp_flutter/serverpod_auth_idp_flutter.dart';
 
 import '../client.dart';
-import '../widgets/backend_shell.dart';
+import '../widgets/product_shell.dart';
+
+class _CatalogItem {
+  final String sku;
+  final String name;
+  final double price;
+  final IconData icon;
+
+  const _CatalogItem({
+    required this.sku,
+    required this.name,
+    required this.price,
+    required this.icon,
+  });
+}
+
+const _catalog = [
+  _CatalogItem(
+    sku: 'ROAST-01',
+    name: 'Ethiopia Single Origin',
+    price: 18.50,
+    icon: Icons.coffee,
+  ),
+  _CatalogItem(
+    sku: 'GEAR-02',
+    name: 'Pour-Over Glass Dripper',
+    price: 34.00,
+    icon: Icons.local_cafe_outlined,
+  ),
+  _CatalogItem(
+    sku: 'SCALE-03',
+    name: 'Precision Brew Scale',
+    price: 59.00,
+    icon: Icons.scale_outlined,
+  ),
+  _CatalogItem(
+    sku: 'PACK-04',
+    name: 'Explorer Starter Kit',
+    price: 45.00,
+    icon: Icons.inventory_2_outlined,
+  ),
+];
 
 class PatternDashboard extends StatefulWidget {
   const PatternDashboard({super.key});
@@ -12,323 +54,478 @@ class PatternDashboard extends StatefulWidget {
 }
 
 class _PatternDashboardState extends State<PatternDashboard> {
-  final _logs = <RpcLogEntry>[];
+  final _activity = <ActivityLogItem>[];
+  final Map<String, int> _cart = {'ROAST-01': 2};
+  final Map<int, PaymentRecord> _paidOrders = {};
+  List<OrderRecord> _orders = [];
 
-  final _authNameController = TextEditingController(text: 'Alan Turing');
-  final _authEmailController = TextEditingController(text: 'alan@example.com');
+  final _nameController = TextEditingController();
+  final _emailController = TextEditingController();
+  User? _profileResult;
+  bool _busy = false;
 
-  final _itemCountController = TextEditingController(text: '3');
-  final _totalPriceController = TextEditingController(text: '79.50');
-  List<OrderRecord> _myOrders = [];
-
-  final _paymentOrderIdController = TextEditingController(text: '1');
-  final _paymentAmountController = TextEditingController(text: '79.50');
-
-  bool _loading = false;
+  @override
+  void initState() {
+    super.initState();
+    _loadOrders();
+  }
 
   @override
   void dispose() {
-    _authNameController.dispose();
-    _authEmailController.dispose();
-    _itemCountController.dispose();
-    _totalPriceController.dispose();
-    _paymentOrderIdController.dispose();
-    _paymentAmountController.dispose();
+    _nameController.dispose();
+    _emailController.dispose();
     super.dispose();
   }
 
-  void _addLog(String action, Object? result, {bool isError = false}) {
+  void _log(String action, Object? detail, {bool isError = false}) {
+    if (!mounted) return;
     setState(() {
-      _logs.insert(
+      _activity.insert(
         0,
-        RpcLogEntry(
+        ActivityLogItem(
           timestamp: DateTime.now(),
           action: action,
-          serverUrl: serverUrlNotifier.value,
           isError: isError,
-          payload: isError ? '$result' : prettyJson(result),
+          detail: isError ? '$detail' : prettyPayload(detail),
         ),
       );
     });
   }
 
-  Future<void> _registerUser() async {
-    setState(() => _loading = true);
-    try {
-      final user = await client.authFeature.register(
-        _authNameController.text.trim(),
-        _authEmailController.text.trim(),
-      );
-      _addLog('authFeature.register', user.toJson());
-    } catch (e) {
-      _addLog('authFeature.register', e, isError: true);
-    } finally {
-      if (mounted) setState(() => _loading = false);
+  int get _cartCount => _cart.values.fold(0, (a, b) => a + b);
+
+  double get _cartTotal {
+    var total = 0.0;
+    for (final item in _catalog) {
+      total += (_cart[item.sku] ?? 0) * item.price;
     }
+    return total;
   }
 
-  Future<void> _lookupUser() async {
-    setState(() => _loading = true);
+  void _adjustQty(String sku, int delta) {
+    setState(() {
+      final next = (_cart[sku] ?? 0) + delta;
+      if (next <= 0) {
+        _cart.remove(sku);
+      } else {
+        _cart[sku] = next;
+      }
+    });
+  }
+
+  Future<void> _loadOrders() async {
     try {
-      final user = await client.authFeature.lookupByEmail(
-        _authEmailController.text.trim(),
-      );
-      _addLog('authFeature.lookupByEmail', user?.toJson());
+      final list = await client.orderFeature.listMyOrders();
+      if (mounted) setState(() => _orders = list);
+      _log('orderFeature.listMyOrders', list.map((o) => o.toJson()).toList());
     } catch (e) {
-      _addLog('authFeature.lookupByEmail', e, isError: true);
-    } finally {
-      if (mounted) setState(() => _loading = false);
+      _log('orderFeature.listMyOrders', e, isError: true);
     }
   }
 
   Future<void> _placeOrder() async {
-    setState(() => _loading = true);
+    if (_cartCount <= 0) return;
+    setState(() => _busy = true);
     try {
       final order = await client.orderFeature.placeOrder(
-        int.tryParse(_itemCountController.text.trim()) ?? 1,
-        double.tryParse(_totalPriceController.text.trim()) ?? 0,
+        _cartCount,
+        _cartTotal,
       );
-      _addLog('orderFeature.placeOrder', order.toJson());
-      await _listMyOrders();
+      setState(() => _cart.clear());
+      _log('orderFeature.placeOrder', order.toJson());
+      await _loadOrders();
     } catch (e) {
-      _addLog('orderFeature.placeOrder', e, isError: true);
+      _log('orderFeature.placeOrder', e, isError: true);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Order failed: $e')),
+        );
+      }
     } finally {
-      if (mounted) setState(() => _loading = false);
+      if (mounted) setState(() => _busy = false);
     }
   }
 
-  Future<void> _listMyOrders() async {
-    try {
-      final orders = await client.orderFeature.listMyOrders();
-      setState(() => _myOrders = orders);
-      _addLog(
-        'orderFeature.listMyOrders',
-        orders.map((o) => o.toJson()).toList(),
-      );
-    } catch (e) {
-      _addLog('orderFeature.listMyOrders', e, isError: true);
-    }
-  }
-
-  Future<void> _chargeOrder() async {
-    setState(() => _loading = true);
+  Future<void> _payOrder(OrderRecord order) async {
+    final id = order.id;
+    if (id == null) return;
+    setState(() => _busy = true);
     try {
       final payment = await client.paymentFeature.chargeOrder(
-        int.tryParse(_paymentOrderIdController.text.trim()) ?? 1,
-        double.tryParse(_paymentAmountController.text.trim()) ?? 0,
+        id,
+        order.totalPrice,
       );
-      _addLog('paymentFeature.chargeOrder', payment.toJson());
+      setState(() => _paidOrders[id] = payment);
+      _log('paymentFeature.chargeOrder', payment.toJson());
     } catch (e) {
-      _addLog('paymentFeature.chargeOrder', e, isError: true);
+      _log('paymentFeature.chargeOrder', e, isError: true);
     } finally {
-      if (mounted) setState(() => _loading = false);
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _registerProfile() async {
+    final name = _nameController.text.trim();
+    final email = _emailController.text.trim();
+    if (name.isEmpty || email.isEmpty) return;
+    setState(() => _busy = true);
+    try {
+      final user = await client.authFeature.register(name, email);
+      setState(() => _profileResult = user);
+      _log('authFeature.register', user.toJson());
+    } catch (e) {
+      _log('authFeature.register', e, isError: true);
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _lookupProfile() async {
+    final email = _emailController.text.trim();
+    if (email.isEmpty) return;
+    setState(() => _busy = true);
+    try {
+      final user = await client.authFeature.lookupByEmail(email);
+      setState(() => _profileResult = user);
+      _log('authFeature.lookupByEmail', user?.toJson());
+    } catch (e) {
+      _log('authFeature.lookupByEmail', e, isError: true);
+    } finally {
+      if (mounted) setState(() => _busy = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return BackendShell(
-      patternTag: '03-vertical-slices',
-      patternTitle: 'Package by Feature (Vertical Slices)',
-      patternDescription:
-          'features/{auth,orders,payments}/ (Orders slice requires auth).',
+    final isAuth = client.auth.isAuthenticated;
+
+    return ProductShell(
+      editionLabel: 'Commerce · Vertical Slices',
+      subtitle:
+          'Three autonomous feature slices: Catalog & Order History (Orders), one-click Payment Capture (Payments), and Customer Profiles (Auth).',
       showAuth: true,
-      logs: _logs,
-      onClearLogs: () => setState(_logs.clear),
-      onLog: _addLog,
-      onClientChanged: () => setState(() {}),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'AuthFeatureEndpoint (client.authFeature)',
-                    style: Theme.of(context).textTheme.titleMedium,
+      activity: _activity,
+      onClearActivity: () => setState(_activity.clear),
+      onLog: _log,
+      onClientChanged: _loadOrders,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final twoCol = constraints.maxWidth >= 860;
+          final left = Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _buildCatalogCard(context),
+              const SizedBox(height: 20),
+              _buildOrdersCard(context),
+            ],
+          );
+          final right = Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _buildCheckoutCard(context, isAuth),
+              const SizedBox(height: 20),
+              _buildProfileCard(context),
+            ],
+          );
+          if (twoCol) {
+            return Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(flex: 3, child: left),
+                const SizedBox(width: 20),
+                Expanded(flex: 2, child: right),
+              ],
+            );
+          }
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              left,
+              const SizedBox(height: 20),
+              right,
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildCatalogCard(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Storefront Catalog',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
                   ),
-                  const SizedBox(height: 12),
-                  Wrap(
-                    spacing: 12,
-                    runSpacing: 12,
-                    crossAxisAlignment: WrapCrossAlignment.center,
-                    children: [
-                      SizedBox(
-                        width: 200,
-                        child: TextField(
-                          controller: _authNameController,
-                          decoration: const InputDecoration(
-                            labelText: 'Name',
-                            border: OutlineInputBorder(),
-                            isDense: true,
-                          ),
+            ),
+            const SizedBox(height: 14),
+            Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              children: [
+                for (final item in _catalog)
+                  SizedBox(
+                    width: 270,
+                    child: Card.outlined(
+                      child: Padding(
+                        padding: const EdgeInsets.all(14),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                CircleAvatar(
+                                  backgroundColor: colors.primaryContainer,
+                                  child: Icon(
+                                    item.icon,
+                                    color: colors.onPrimaryContainer,
+                                  ),
+                                ),
+                                const Spacer(),
+                                Text(
+                                  '\$${item.price.toStringAsFixed(2)}',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .titleMedium
+                                      ?.copyWith(fontWeight: FontWeight.w700),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 10),
+                            Text(
+                              item.name,
+                              style:
+                                  const TextStyle(fontWeight: FontWeight.w600),
+                            ),
+                            const SizedBox(height: 10),
+                            Row(
+                              children: [
+                                IconButton.outlined(
+                                  visualDensity: VisualDensity.compact,
+                                  onPressed: (_cart[item.sku] ?? 0) > 0
+                                      ? () => _adjustQty(item.sku, -1)
+                                      : null,
+                                  icon: const Icon(Icons.remove, size: 16),
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                  ),
+                                  child: Text('${_cart[item.sku] ?? 0}'),
+                                ),
+                                IconButton.filledTonal(
+                                  visualDensity: VisualDensity.compact,
+                                  onPressed: () => _adjustQty(item.sku, 1),
+                                  icon: const Icon(Icons.add, size: 16),
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
                       ),
-                      SizedBox(
-                        width: 220,
-                        child: TextField(
-                          controller: _authEmailController,
-                          decoration: const InputDecoration(
-                            labelText: 'Email',
-                            border: OutlineInputBorder(),
-                            isDense: true,
-                          ),
-                        ),
-                      ),
-                      FilledButton.icon(
-                        onPressed: _loading ? null : _registerUser,
-                        icon: const Icon(Icons.person_add, size: 18),
-                        label: const Text('Register'),
-                      ),
-                      OutlinedButton.icon(
-                        onPressed: _loading ? null : _lookupUser,
-                        icon: const Icon(Icons.search, size: 18),
-                        label: const Text('Lookup by Email'),
-                      ),
-                    ],
+                    ),
                   ),
-                ],
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildOrdersCard(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Text(
+                  'My Order History',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                ),
+                const Spacer(),
+                IconButton(
+                  tooltip: 'Refresh orders',
+                  onPressed: _loadOrders,
+                  icon: const Icon(Icons.refresh, size: 20),
+                ),
+              ],
+            ),
+            const Divider(height: 20),
+            if (_orders.isEmpty)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 20),
+                child: Center(
+                  child: Text('No orders yet. Sign in and place an order.'),
+                ),
+              )
+            else
+              for (final order in _orders) ...[
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.receipt_long_outlined),
+                  title: Text(
+                    'Order #${order.id} · ${order.itemCount} items',
+                  ),
+                  subtitle: Text('\$${order.totalPrice.toStringAsFixed(2)}'),
+                  trailing: _paidOrders.containsKey(order.id)
+                      ? Chip(
+                          avatar: const Icon(
+                            Icons.check_circle,
+                            size: 16,
+                            color: Colors.green,
+                          ),
+                          label: Text(
+                            _paidOrders[order.id]!.status.toUpperCase(),
+                          ),
+                        )
+                      : FilledButton.tonal(
+                          onPressed: _busy ? null : () => _payOrder(order),
+                          child: const Text('Pay Now'),
+                        ),
+                ),
+                const Divider(height: 1),
+              ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCheckoutCard(BuildContext context, bool isAuth) {
+    final colors = Theme.of(context).colorScheme;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Cart Summary',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+            ),
+            const SizedBox(height: 10),
+            if (!isAuth)
+              Container(
+                padding: const EdgeInsets.all(12),
+                margin: const EdgeInsets.only(bottom: 12),
+                decoration: BoxDecoration(
+                  color: colors.secondaryContainer,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  'Sign in (top right) to place orders and view your history.',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: colors.onSecondaryContainer,
+                  ),
+                ),
+              ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('$_cartCount item(s)'),
+                Text(
+                  '\$${_cartTotal.toStringAsFixed(2)}',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed: (_busy || _cartCount <= 0) ? null : _placeOrder,
+                icon: const Icon(Icons.shopping_bag_outlined, size: 18),
+                label: const Text('Place Order'),
               ),
             ),
-          ),
-          const SizedBox(height: 16),
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Text(
-                        'OrderFeatureEndpoint (client.orderFeature)',
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                      const SizedBox(width: 8),
-                      const Chip(
-                        label: Text('Requires Sign In'),
-                        visualDensity: VisualDensity.compact,
-                      ),
-                    ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProfileCard(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Customer Directory (Auth Slice)',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
                   ),
-                  const SizedBox(height: 12),
-                  Wrap(
-                    spacing: 12,
-                    runSpacing: 12,
-                    crossAxisAlignment: WrapCrossAlignment.center,
-                    children: [
-                      SizedBox(
-                        width: 140,
-                        child: TextField(
-                          controller: _itemCountController,
-                          keyboardType: TextInputType.number,
-                          decoration: const InputDecoration(
-                            labelText: 'Item count',
-                            border: OutlineInputBorder(),
-                            isDense: true,
-                          ),
-                        ),
-                      ),
-                      SizedBox(
-                        width: 160,
-                        child: TextField(
-                          controller: _totalPriceController,
-                          keyboardType: const TextInputType.numberWithOptions(
-                            decimal: true,
-                          ),
-                          decoration: const InputDecoration(
-                            labelText: 'Total price (\$)',
-                            border: OutlineInputBorder(),
-                            isDense: true,
-                          ),
-                        ),
-                      ),
-                      FilledButton.icon(
-                        onPressed: _loading ? null : _placeOrder,
-                        icon: const Icon(Icons.shopping_bag_outlined, size: 18),
-                        label: const Text('Place Order'),
-                      ),
-                      OutlinedButton.icon(
-                        onPressed: _listMyOrders,
-                        icon: const Icon(Icons.list_alt, size: 18),
-                        label: Text('My Orders (${_myOrders.length})'),
-                      ),
-                    ],
-                  ),
-                  if (_myOrders.isNotEmpty) ...[
-                    const SizedBox(height: 12),
-                    for (final o in _myOrders)
-                      ListTile(
-                        dense: true,
-                        leading: const Icon(Icons.receipt_long),
-                        title: Text(
-                          'Order #${o.id} · ${o.itemCount} items · \$${o.totalPrice}',
-                        ),
-                        subtitle: Text('userId=${o.userId}'),
-                      ),
-                  ],
-                ],
+            ),
+            const SizedBox(height: 10),
+            TextField(
+              controller: _nameController,
+              decoration: const InputDecoration(
+                labelText: 'Customer name',
+                border: OutlineInputBorder(),
+                isDense: true,
               ),
             ),
-          ),
-          const SizedBox(height: 16),
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'PaymentFeatureEndpoint (client.paymentFeature)',
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 12),
-                  Wrap(
-                    spacing: 12,
-                    runSpacing: 12,
-                    crossAxisAlignment: WrapCrossAlignment.center,
-                    children: [
-                      SizedBox(
-                        width: 140,
-                        child: TextField(
-                          controller: _paymentOrderIdController,
-                          keyboardType: TextInputType.number,
-                          decoration: const InputDecoration(
-                            labelText: 'Order ID',
-                            border: OutlineInputBorder(),
-                            isDense: true,
-                          ),
-                        ),
-                      ),
-                      SizedBox(
-                        width: 160,
-                        child: TextField(
-                          controller: _paymentAmountController,
-                          keyboardType: const TextInputType.numberWithOptions(
-                            decimal: true,
-                          ),
-                          decoration: const InputDecoration(
-                            labelText: 'Amount (\$)',
-                            border: OutlineInputBorder(),
-                            isDense: true,
-                          ),
-                        ),
-                      ),
-                      FilledButton.icon(
-                        onPressed: _loading ? null : _chargeOrder,
-                        icon: const Icon(Icons.payments_outlined, size: 18),
-                        label: const Text('Charge Order'),
-                      ),
-                    ],
-                  ),
-                ],
+            const SizedBox(height: 8),
+            TextField(
+              controller: _emailController,
+              decoration: const InputDecoration(
+                labelText: 'Email',
+                border: OutlineInputBorder(),
+                isDense: true,
               ),
             ),
-          ),
-        ],
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Expanded(
+                  child: FilledButton.tonal(
+                    onPressed: _busy ? null : _registerProfile,
+                    child: const Text('Register'),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: _busy ? null : _lookupProfile,
+                    child: const Text('Lookup'),
+                  ),
+                ),
+              ],
+            ),
+            if (_profileResult != null) ...[
+              const SizedBox(height: 12),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                dense: true,
+                leading: const Icon(Icons.person_outline),
+                title: Text(_profileResult!.name),
+                subtitle: Text(_profileResult!.email),
+                trailing: Chip(
+                  label: Text(_profileResult!.isActive ? 'Active' : 'Inactive'),
+                  visualDensity: VisualDensity.compact,
+                ),
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }
