@@ -3,48 +3,7 @@ import 'package:orderflow_client/orderflow_client.dart';
 import 'package:serverpod_auth_idp_flutter/serverpod_auth_idp_flutter.dart';
 
 import '../client.dart';
-import '../widgets/product_shell.dart';
-
-class _CatalogItem {
-  final String sku;
-  final String name;
-  final double price;
-  final IconData icon;
-
-  const _CatalogItem({
-    required this.sku,
-    required this.name,
-    required this.price,
-    required this.icon,
-  });
-}
-
-const _catalog = [
-  _CatalogItem(
-    sku: 'ROAST-01',
-    name: 'Ethiopia Single Origin',
-    price: 18.50,
-    icon: Icons.coffee,
-  ),
-  _CatalogItem(
-    sku: 'GEAR-02',
-    name: 'Pour-Over Glass Dripper',
-    price: 34.00,
-    icon: Icons.local_cafe_outlined,
-  ),
-  _CatalogItem(
-    sku: 'SCALE-03',
-    name: 'Precision Brew Scale',
-    price: 59.00,
-    icon: Icons.scale_outlined,
-  ),
-  _CatalogItem(
-    sku: 'PACK-04',
-    name: 'Explorer Starter Kit',
-    price: 45.00,
-    icon: Icons.inventory_2_outlined,
-  ),
-];
+import '../widgets/ecommerce_shell.dart';
 
 class PatternDashboard extends StatefulWidget {
   const PatternDashboard({super.key});
@@ -54,7 +13,7 @@ class PatternDashboard extends StatefulWidget {
 }
 
 class _PatternDashboardState extends State<PatternDashboard> {
-  final _activity = <ActivityLogItem>[];
+  final _activity = ValueNotifier<List<ActivityLogItem>>([]);
   final Map<String, int> _cart = {'ROAST-01': 2};
   final Map<int, PaymentRecord> _paidOrders = {};
   List<OrderRecord> _orders = [];
@@ -72,32 +31,36 @@ class _PatternDashboardState extends State<PatternDashboard> {
 
   @override
   void dispose() {
+    _activity.dispose();
     _nameController.dispose();
     _emailController.dispose();
     super.dispose();
   }
 
-  void _log(String action, Object? detail, {bool isError = false}) {
-    if (!mounted) return;
-    setState(() {
-      _activity.insert(
-        0,
-        ActivityLogItem(
-          timestamp: DateTime.now(),
-          action: action,
-          isError: isError,
-          detail: isError ? '$detail' : prettyPayload(detail),
-        ),
-      );
-    });
+  void _log(
+    String action,
+    String summary,
+    Object? detail, {
+    bool isError = false,
+  }) {
+    _activity.value = [
+      ActivityLogItem(
+        timestamp: DateTime.now(),
+        action: action,
+        summary: summary,
+        isError: isError,
+        detail: isError ? '$detail' : prettyPayload(detail),
+      ),
+      ..._activity.value,
+    ];
   }
 
   int get _cartCount => _cart.values.fold(0, (a, b) => a + b);
 
   double get _cartTotal {
     var total = 0.0;
-    for (final item in _catalog) {
-      total += (_cart[item.sku] ?? 0) * item.price;
+    for (final p in shopCatalog) {
+      total += (_cart[p.sku] ?? 0) * p.price;
     }
     return total;
   }
@@ -117,9 +80,14 @@ class _PatternDashboardState extends State<PatternDashboard> {
     try {
       final list = await client.orderFeature.listMyOrders();
       if (mounted) setState(() => _orders = list);
-      _log('orderFeature.listMyOrders', list.map((o) => o.toJson()).toList());
+      _log(
+        'orderFeature.listMyOrders',
+        'Loaded ${list.length} order(s) from orders slice',
+        list.map((o) => o.toJson()).toList(),
+      );
     } catch (e) {
-      _log('orderFeature.listMyOrders', e, isError: true);
+      _log('orderFeature.listMyOrders', 'Failed to load orders', e,
+          isError: true);
     }
   }
 
@@ -132,10 +100,15 @@ class _PatternDashboardState extends State<PatternDashboard> {
         _cartTotal,
       );
       setState(() => _cart.clear());
-      _log('orderFeature.placeOrder', order.toJson());
+      _log(
+        'orderFeature.placeOrder',
+        'Placed order #${order.id} (${order.itemCount} items, \$${order.totalPrice.toStringAsFixed(2)})',
+        order.toJson(),
+      );
       await _loadOrders();
     } catch (e) {
-      _log('orderFeature.placeOrder', e, isError: true);
+      _log('orderFeature.placeOrder', 'Order placement failed', e,
+          isError: true);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Order failed: $e')),
@@ -156,9 +129,13 @@ class _PatternDashboardState extends State<PatternDashboard> {
         order.totalPrice,
       );
       setState(() => _paidOrders[id] = payment);
-      _log('paymentFeature.chargeOrder', payment.toJson());
+      _log(
+        'paymentFeature.chargeOrder',
+        'Captured \$${payment.amount.toStringAsFixed(2)} for Order #$id',
+        payment.toJson(),
+      );
     } catch (e) {
-      _log('paymentFeature.chargeOrder', e, isError: true);
+      _log('paymentFeature.chargeOrder', 'Payment failed', e, isError: true);
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -172,9 +149,9 @@ class _PatternDashboardState extends State<PatternDashboard> {
     try {
       final user = await client.authFeature.register(name, email);
       setState(() => _profileResult = user);
-      _log('authFeature.register', user.toJson());
+      _log('authFeature.register', 'Registered ${user.name}', user.toJson());
     } catch (e) {
-      _log('authFeature.register', e, isError: true);
+      _log('authFeature.register', 'Registration failed', e, isError: true);
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -187,9 +164,13 @@ class _PatternDashboardState extends State<PatternDashboard> {
     try {
       final user = await client.authFeature.lookupByEmail(email);
       setState(() => _profileResult = user);
-      _log('authFeature.lookupByEmail', user?.toJson());
+      _log(
+        'authFeature.lookupByEmail',
+        user != null ? 'Found ${user.name}' : 'No customer for $email',
+        user?.toJson(),
+      );
     } catch (e) {
-      _log('authFeature.lookupByEmail', e, isError: true);
+      _log('authFeature.lookupByEmail', 'Lookup failed', e, isError: true);
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -199,13 +180,16 @@ class _PatternDashboardState extends State<PatternDashboard> {
   Widget build(BuildContext context) {
     final isAuth = client.auth.isAuthenticated;
 
-    return ProductShell(
-      editionLabel: 'Commerce · Vertical Slices',
-      subtitle:
-          'Three autonomous feature slices: Catalog & Order History (Orders), one-click Payment Capture (Payments), and Customer Profiles (Auth).',
+    return EcommerceShell(
+      patternBadge: '03 · Vertical Slices',
+      architectureTitle: 'Pattern 3: Package by Feature (Vertical Slices)',
+      architectureFlow:
+          'features/auth + features/orders + features/payments (Tier 1)',
+      architectureTradeoff:
+          'High cognitive locality—models, services, and endpoints live together per capability. Watch out for dumping shared models into common/.',
       showAuth: true,
-      activity: _activity,
-      onClearActivity: () => setState(_activity.clear),
+      activityNotifier: _activity,
+      onClearActivity: () => _activity.value = [],
       onLog: _log,
       onClientChanged: _loadOrders,
       child: LayoutBuilder(
@@ -214,7 +198,7 @@ class _PatternDashboardState extends State<PatternDashboard> {
           final left = Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _buildCatalogCard(context),
+              _buildCatalog(context),
               const SizedBox(height: 20),
               _buildOrdersCard(context),
             ],
@@ -222,9 +206,9 @@ class _PatternDashboardState extends State<PatternDashboard> {
           final right = Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _buildCheckoutCard(context, isAuth),
+              _buildCartCard(context, isAuth),
               const SizedBox(height: 20),
-              _buildProfileCard(context),
+              _buildCustomerCard(context),
             ],
           );
           if (twoCol) {
@@ -250,7 +234,7 @@ class _PatternDashboardState extends State<PatternDashboard> {
     );
   }
 
-  Widget _buildCatalogCard(BuildContext context) {
+  Widget _buildCatalog(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     return Card(
       child: Padding(
@@ -259,9 +243,9 @@ class _PatternDashboardState extends State<PatternDashboard> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Storefront Catalog',
+              'Shop Coffee & Gear',
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w700,
                   ),
             ),
             const SizedBox(height: 14),
@@ -269,7 +253,7 @@ class _PatternDashboardState extends State<PatternDashboard> {
               spacing: 12,
               runSpacing: 12,
               children: [
-                for (final item in _catalog)
+                for (final p in shopCatalog)
                   SizedBox(
                     width: 270,
                     child: Card.outlined(
@@ -283,13 +267,13 @@ class _PatternDashboardState extends State<PatternDashboard> {
                                 CircleAvatar(
                                   backgroundColor: colors.primaryContainer,
                                   child: Icon(
-                                    item.icon,
+                                    p.icon,
                                     color: colors.onPrimaryContainer,
                                   ),
                                 ),
                                 const Spacer(),
                                 Text(
-                                  '\$${item.price.toStringAsFixed(2)}',
+                                  '\$${p.price.toStringAsFixed(2)}',
                                   style: Theme.of(context)
                                       .textTheme
                                       .titleMedium
@@ -297,31 +281,37 @@ class _PatternDashboardState extends State<PatternDashboard> {
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 10),
+                            const SizedBox(height: 12),
                             Text(
-                              item.name,
+                              p.name,
                               style:
                                   const TextStyle(fontWeight: FontWeight.w600),
                             ),
-                            const SizedBox(height: 10),
+                            Text(
+                              p.subtitle,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodySmall
+                                  ?.copyWith(color: colors.onSurfaceVariant),
+                            ),
+                            const SizedBox(height: 12),
                             Row(
                               children: [
                                 IconButton.outlined(
                                   visualDensity: VisualDensity.compact,
-                                  onPressed: (_cart[item.sku] ?? 0) > 0
-                                      ? () => _adjustQty(item.sku, -1)
+                                  onPressed: (_cart[p.sku] ?? 0) > 0
+                                      ? () => _adjustQty(p.sku, -1)
                                       : null,
                                   icon: const Icon(Icons.remove, size: 16),
                                 ),
                                 Padding(
                                   padding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                  ),
-                                  child: Text('${_cart[item.sku] ?? 0}'),
+                                      horizontal: 12),
+                                  child: Text('${_cart[p.sku] ?? 0}'),
                                 ),
                                 IconButton.filledTonal(
                                   visualDensity: VisualDensity.compact,
-                                  onPressed: () => _adjustQty(item.sku, 1),
+                                  onPressed: () => _adjustQty(p.sku, 1),
                                   icon: const Icon(Icons.add, size: 16),
                                 ),
                               ],
@@ -351,12 +341,11 @@ class _PatternDashboardState extends State<PatternDashboard> {
                 Text(
                   'My Order History',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w700,
                       ),
                 ),
                 const Spacer(),
                 IconButton(
-                  tooltip: 'Refresh orders',
                   onPressed: _loadOrders,
                   icon: const Icon(Icons.refresh, size: 20),
                 ),
@@ -371,27 +360,20 @@ class _PatternDashboardState extends State<PatternDashboard> {
                 ),
               )
             else
-              for (final order in _orders) ...[
+              for (final o in _orders) ...[
                 ListTile(
                   contentPadding: EdgeInsets.zero,
                   leading: const Icon(Icons.receipt_long_outlined),
-                  title: Text(
-                    'Order #${order.id} · ${order.itemCount} items',
-                  ),
-                  subtitle: Text('\$${order.totalPrice.toStringAsFixed(2)}'),
-                  trailing: _paidOrders.containsKey(order.id)
+                  title: Text('Order #${o.id} · ${o.itemCount} item(s)'),
+                  subtitle: Text('\$${o.totalPrice.toStringAsFixed(2)}'),
+                  trailing: _paidOrders.containsKey(o.id)
                       ? Chip(
-                          avatar: const Icon(
-                            Icons.check_circle,
-                            size: 16,
-                            color: Colors.green,
-                          ),
-                          label: Text(
-                            _paidOrders[order.id]!.status.toUpperCase(),
-                          ),
+                          avatar: const Icon(Icons.check_circle,
+                              size: 16, color: Colors.green),
+                          label: Text(_paidOrders[o.id]!.status.toUpperCase()),
                         )
                       : FilledButton.tonal(
-                          onPressed: _busy ? null : () => _payOrder(order),
+                          onPressed: _busy ? null : () => _payOrder(o),
                           child: const Text('Pay Now'),
                         ),
                 ),
@@ -403,7 +385,7 @@ class _PatternDashboardState extends State<PatternDashboard> {
     );
   }
 
-  Widget _buildCheckoutCard(BuildContext context, bool isAuth) {
+  Widget _buildCartCard(BuildContext context, bool isAuth) {
     final colors = Theme.of(context).colorScheme;
     return Card(
       child: Padding(
@@ -411,13 +393,19 @@ class _PatternDashboardState extends State<PatternDashboard> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Cart Summary',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
+            Row(
+              children: [
+                Text(
+                  'Cart Summary',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                ),
+                const Spacer(),
+                Text('$_cartCount item(s)'),
+              ],
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 12),
             if (!isAuth)
               Container(
                 padding: const EdgeInsets.all(12),
@@ -427,7 +415,7 @@ class _PatternDashboardState extends State<PatternDashboard> {
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Text(
-                  'Sign in (top right) to place orders and view your history.',
+                  'Sign in (top right) to place orders and view order history.',
                   style: TextStyle(
                     fontSize: 12,
                     color: colors.onSecondaryContainer,
@@ -437,7 +425,7 @@ class _PatternDashboardState extends State<PatternDashboard> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('$_cartCount item(s)'),
+                const Text('Total'),
                 Text(
                   '\$${_cartTotal.toStringAsFixed(2)}',
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
@@ -461,7 +449,7 @@ class _PatternDashboardState extends State<PatternDashboard> {
     );
   }
 
-  Widget _buildProfileCard(BuildContext context) {
+  Widget _buildCustomerCard(BuildContext context) {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(20),
@@ -469,16 +457,16 @@ class _PatternDashboardState extends State<PatternDashboard> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Customer Directory (Auth Slice)',
+              'Shopper Account',
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w700,
                   ),
             ),
             const SizedBox(height: 10),
             TextField(
               controller: _nameController,
               decoration: const InputDecoration(
-                labelText: 'Customer name',
+                labelText: 'Full name',
                 border: OutlineInputBorder(),
                 isDense: true,
               ),
@@ -498,7 +486,7 @@ class _PatternDashboardState extends State<PatternDashboard> {
                 Expanded(
                   child: FilledButton.tonal(
                     onPressed: _busy ? null : _registerProfile,
-                    child: const Text('Register'),
+                    child: const Text('Save'),
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -518,10 +506,6 @@ class _PatternDashboardState extends State<PatternDashboard> {
                 leading: const Icon(Icons.person_outline),
                 title: Text(_profileResult!.name),
                 subtitle: Text(_profileResult!.email),
-                trailing: Chip(
-                  label: Text(_profileResult!.isActive ? 'Active' : 'Inactive'),
-                  visualDensity: VisualDensity.compact,
-                ),
               ),
             ],
           ],
