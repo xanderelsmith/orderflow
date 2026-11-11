@@ -30,6 +30,7 @@ dependencies:
   flutter:
     sdk: flutter
   google_fonts: ^8.1.0
+  http: ^1.6.0
   orderflow_client:
     path: ../orderflow_client
   serverpod_auth_idp_flutter: 4.0.4

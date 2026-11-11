@@ -26,3 +26,16 @@ Inside `orderflow_server/`:
 dart analyze
 serverpod generate
 ```
+
+
+## Flutter Web Client (`orderflow_flutter/`)
+
+* On **`main`**, `orderflow_flutter` is a **Unified Multi-Backend Explorer** that connects to all 5 server backends (`01`–`05`) with per-backend Server URL configuration (`:8080`–`:8084` presets), greeting ping, auth support for `02-layered` & `03-vertical-slices`, and an RPC response console.
+* On each branch (`01-simple-mvc` .. `05-event-driven`), `orderflow_flutter` is wired directly to that branch's strongly-typed `orderflow_client` endpoints.
+
+Run as Flutter Web:
+
+```bash
+cd orderflow_flutter
+flutter run -d chrome
+```
