@@ -35,7 +35,12 @@ database:
   user: postgres
   #requireSsl: true # defaults to false
   #isUnixSocket: true # defaults to false
-  dataPath: .serverpod/development/pgdata_03
+  # [Branch Switching Isolation]:
+  # Embedded Postgres stores runtime lock files, socket directories, and PID files
+  # in `dataPath.parent`. Keeping each branch's cluster in a distinct parent directory
+  # (e.g., .serverpod/03_vertical_slices/pgdata for branch 3, .serverpod/02_layered/pgdata for branch 2)
+  # prevents cross-branch lock collisions and ExitException on launch.
+  dataPath: .serverpod/03_vertical_slices/pgdata
   #maxConnectionCount: 10 # Defaults to 10, a negative or null value removes the limit
 
 # This is the setup for Redis.
