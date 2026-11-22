@@ -2,10 +2,33 @@
   "version": "2.0.0",
   "tasks": [
     {
+      // [Branch Switching Automation]:
+      // Terminate any leftover/orphaned postgres processes from previously run branches
+      // or aborted debug sessions so port 8090/5432 and unix socket locks are freed before launch.
+      "label": "kill_stale_postgres",
+      "type": "shell",
+      "command": "powershell -Command \"Get-Process postgres -ErrorAction SilentlyContinue | Stop-Process -Force\"",
+      "windows": {
+        "command": "powershell -Command \"Get-Process postgres -ErrorAction SilentlyContinue | Stop-Process -Force\""
+      },
+      "osx": {
+        "command": "pkill -f postgres 2>/dev/null || true"
+      },
+      "linux": {
+        "command": "pkill -f postgres 2>/dev/null || true"
+      },
+      "presentation": {
+        "reveal": "never",
+        "panel": "shared"
+      }
+    },
+    {
       "label": "serverpod_start",
       "type": "shell",
       "command": "serverpod",
       "args": ["start"],
+      // Ensures stale background postgres instances from previous branches are killed before starting
+      "dependsOn": ["kill_stale_postgres"],
       "options": {
         "cwd": "${workspaceFolder}/orderflow_server",
         "env": {
