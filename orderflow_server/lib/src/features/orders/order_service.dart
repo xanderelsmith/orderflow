@@ -1,7 +1,7 @@
 import 'package:serverpod/serverpod.dart';
 import '../../generated/protocol.dart';
 
-class OrderFeatureService {
+class OrderService {
   Future<OrderRecord> checkout(
     Session session,
     String userId,

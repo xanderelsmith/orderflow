@@ -4,7 +4,7 @@ import 'order_service.dart';
 
 /// Pattern 3 (Package by Feature): Vertical slice for orders.
 class OrderFeatureEndpoint extends Endpoint {
-  final OrderFeatureService _service = OrderFeatureService();
+  final OrderService _service = OrderService();
 
   Future<OrderRecord> placeOrder(
     Session session,
